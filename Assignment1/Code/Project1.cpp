@@ -3,6 +3,8 @@
 #include "ui_mainwindow.h"
 #include <QtGui>
 
+#include <QDebug>//DEBUG
+
 /***********************************************************************
   This is the only file you need to change for your assignment.  The
   other files control the UI (in case you want to make changes.)
@@ -88,7 +90,7 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
     int r, c, rd, cd, i;
     QRgb pixel;
 
-    // This is the size of the kernel
+    // This is the size of the kernel: side of the kernal
     int size = 2*radius + 1;
 
     // Create a buffer image so we're not reading and writing to the same image during filtering.
@@ -172,10 +174,25 @@ void MainWindow::HalfImage(QImage &image)
 }
 
 
-//Task1: Gaussian module
+//Task1: GaussianBlurImage(QImage *image, double sigma) timing
 void MainWindow::GaussianBlurImage(QImage *image, double sigma)
 {
-    // Add your code here.  Look at MeanBlurImage to get yourself started.
+    int radius=(int)(ceil(3*sigma)); // The 3-sigma rule
+    int size = 2*radius+1;//size of the kernel
+    double rr=0.0, rev_sigma22=1.0/2*pow(sigma,2);
+    double *kernel = new double [size*size];
+    int i = 0;
+
+    // Create a buffer image so we're not reading and writing to the same image during filtering.
+    QImage buffer;
+    int w = image->width();
+    int h = image->height();
+
+    for(i = 0;i<size*size;i++)
+    {
+        rr=pow((int)i/size-radius,2)+pow(i%size,2);
+        kernel[i] = rev_sigma22/(M_PI)*exp(-rr*rev_sigma22);
+    }
 }
 
 void MainWindow::SeparableGaussianBlurImage(QImage *image, double sigma)
