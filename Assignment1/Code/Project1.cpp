@@ -10,6 +10,50 @@
   other files control the UI (in case you want to make changes.)
 ************************************************************************/
 
+// Some constants
+const int default_radius=2;
+
+//Convolution
+
+void Convolve(QImage *image, double *kernel, int kernelWidth, int kernelHeight, bool fForDerivative)
+{
+    int height = image->height();
+    int width = image->width();
+    int kernelHalfHeight = (kernelHeight/2);  //DEBUG
+    int kernelHalfWidth = (kernelWidth/2);
+    // Create an empty image 
+    QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width + 2*kernelHalfWidth, height + 2*kernelHalfHeight );
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            double rgb[3];
+            rgb[0] = rgb[1] = rgb[2] = (!fForDerivative ? 0.0 : 128.0);
+
+            for (int fy = 0; fy < kernelHeight; fy++)
+            {
+                for (int fx = 0; fx < kernelWidth; fx++)
+                {
+                    // Translate to coordinates in buffer space
+                    int by = y + fy;
+                    int bx = x + fx;
+
+                    QRgb pixel = buffer.pixel(bx, by);
+                    double kernelWeight = kernel[fy*kernelWidth+fx];
+                    rgb[0] += kernelWeight*qRed(pixel);
+                    rgb[1] += kernelWeight*qGreen(pixel);
+                    rgb[2] += kernelWeight*qBlue(pixel);
+                }
+            }
+
+            image->setPixel(x, y, ClampPixel(static_cast<int>(floor(rgb[0]+0.5)),
+                        static_cast<int>(floor(rgb[1]+0.5)),
+                        static_cast<int>(floor(rgb[2]+0.5)))
+                    );
+        }
+    }
+}
+
 
 // The first four functions provide example code to help get you started
 
@@ -177,7 +221,7 @@ void MainWindow::HalfImage(QImage &image)
 //Task1: GaussianBlurImage(QImage *image, double sigma) timing
 void MainWindow::GaussianBlurImage(QImage *image, double sigma)
 {
-    int radius=(int)(ceil(3*sigma)); // The 3-sigma rule
+    int radius=default_radius;
     int size = 2*radius+1;//size of the kernel
     double rr=0.0, rev_sigma22=1.0/2*pow(sigma,2);
     double *kernel = new double [size*size];
