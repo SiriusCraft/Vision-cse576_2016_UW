@@ -252,9 +252,32 @@ void MainWindow::GaussianBlurImage(QImage *image, double sigma)
     }
 }
 
+//Task 2: SeparableGaussianBlurImage(QImage *image, double sigma)
 void MainWindow::SeparableGaussianBlurImage(QImage *image, double sigma)
 {
-    // Add your code here.  Done right, you should be able to copy most of the code from GaussianBlurImage.
+    if (sigma <= 0)
+    {
+        return;
+    }
+
+    // Calculate the kernel (some extra computation/storage, should be fine...)
+    double twoSigSq = 2.0 * pow(sigma, 2);
+    double sigSqRt = sigma * sqrt(2*M_PI);
+    int kernelHalfSide = static_cast<int>(ceil(3 * sigma));
+    int kernelSize = ((2 * kernelHalfSide) + 1);
+    double *kernel = new double[kernelSize];
+    for (int i = 0; i < kernelSize; i++)
+    {
+        int y = (i - kernelHalfSide);
+        kernel[i] = (1.0 / (sigSqRt)) * pow(M_E, -1*(pow(y,2.0))/twoSigSq);
+    }
+
+    // Generate the updated image
+    ConvolveHelper(image, kernel, kernelSize, 1, false/*fForDerivative*/);
+    ConvolveHelper(image, kernel, 1, kernelSize, false/*fForDerivative*/);
+
+    // Clean up!
+    delete[] kernel;
 }
 
 void MainWindow::FirstDerivImage(QImage *image, double sigma)
