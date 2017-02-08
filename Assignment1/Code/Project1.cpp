@@ -172,9 +172,9 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
         kernel[i] /= denom;
 
     // For each pixel in the image...
-    for(r=0;r<h/*image->height()*/;r++)
+    for(r=0/*row*/;r<h/*image->height()*/;r++)
     {
-        for(c=0;c<w/*image->width()*/;c++)
+        for(c=0/*column*/;c<w/*image->width()*/;c++)
         {
             double rgb[3];
 
@@ -200,7 +200,7 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
                 }
 
             // Store mean pixel in the image to be returned.
-            image->setPixel(c, r, qRgb((int) floor(rgb[0] + 0.5), (int) floor(rgb[1] + 0.5), (int) floor(rgb[2] + 0.5)));
+            image->setPixel(c, r, qRgb(static_cast<int>(floor(rgb[0]+0.5)), static_cast<int>(floor(rgb[1]+0.5)), static_cast<int>(floor(rgb[2]+0.5))));
         }
     }
 
