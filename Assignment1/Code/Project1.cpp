@@ -13,26 +13,36 @@
 // Some constants
 const int default_radius=2;
 
+// Clamp Pixel
+QRgb ClampPixel(int r, int g, int b)
+{
+    return qRgb(max(0, min(255, r)),
+                max(0, min(255, g)),
+                max(0, min(255, b)));
+}
 //Convolution
 
-void Convolve(QImage *image, double *kernel, int kernelWidth, int kernelHeight, bool fForDerivative)
+void Convolve(QImage *image, double *kernel, int kernel_width, int kernel_height, bool fForDerivative)
 {
     int height = image->height();
     int width = image->width();
-    int kernelHalfHeight = (kernelHeight/2);  //DEBUG
-    int kernelHalfWidth = (kernelWidth/2);
+    int kernel_half_height = (kernel_height-1)/2;  //DEBUG
+    int kernel_half_width = (kernel_width-1)/2;
     // Create an empty image 
-    QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width + 2*kernelHalfWidth, height + 2*kernelHalfHeight );
-    for (int y = 0; y < height; y++)
+    QImage buffer = image->copy(-kernel_half_width, -kernel_half_height, width + 2*kernel_half_width, height + 2*kernelHalfHeight );
+    /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
+     *  The returned image is copied from the position (x, y) in this image, and will always have the given width and height.
+     *  In areas beyond this image, pixels are set to 0.*/
+    for (int y = 0; y<height; y++)
     {
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x<width; x++)
         {
             double rgb[3];
-            rgb[0] = rgb[1] = rgb[2] = (!fForDerivative ? 0.0 : 128.0);
+            rgb[0]= rgb[1]= rgb[2]= (!fForDerivative ? 0.0 : 128.0);
 
-            for (int fy = 0; fy < kernelHeight; fy++)
+            for (int fy = 0; fy < kernel_height; fy++)
             {
-                for (int fx = 0; fx < kernelWidth; fx++)
+                for (int fx = 0; fx < kernel_width; fx++)
                 {
                     // Translate to coordinates in buffer space
                     int by = y + fy;
@@ -134,7 +144,7 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
     int r, c, rd, cd, i;
     QRgb pixel;
 
-    // This is the size of the kernel: side of the kernal
+    // This is the size of the kernel: side of the kernal - odd
     int size = 2*radius + 1;
 
     // Create a buffer image so we're not reading and writing to the same image during filtering.

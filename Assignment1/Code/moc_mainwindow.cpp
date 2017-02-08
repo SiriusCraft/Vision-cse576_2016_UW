@@ -205,5 +205,5 @@ int MainWindow::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     }
     return _id;
 }
-QT_WARNING_POP
+//QT_WARNING_POP
 QT_END_MOC_NAMESPACE
