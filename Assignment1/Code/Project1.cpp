@@ -29,7 +29,7 @@ void Convolve(QImage *image, double *kernel, int kernel_width, int kernel_height
     int kernel_half_height = (kernel_height-1)/2;  //DEBUG
     int kernel_half_width = (kernel_width-1)/2;
     // Create an empty image 
-    QImage buffer = image->copy(-kernel_half_width, -kernel_half_height, width + 2*kernel_half_width, height + 2*kernelHalfHeight );
+    QImage buffer = image->copy(-kernel_half_width, -kernel_half_height, width + 2*kernel_half_width, height + 2*kernel_half_height );
     /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
      *  The returned image is copied from the position (x, y) in this image, and will always have the given width and height.
      *  In areas beyond this image, pixels are set to 0.*/
@@ -49,7 +49,7 @@ void Convolve(QImage *image, double *kernel, int kernel_width, int kernel_height
                     int bx = x + fx;
 
                     QRgb pixel = buffer.pixel(bx, by);
-                    double kernelWeight = kernel[fy*kernelWidth+fx];
+                    double kernelWeight = kernel[fy*kernel_width+fx];
                     rgb[0] += kernelWeight*qRed(pixel);
                     rgb[1] += kernelWeight*qGreen(pixel);
                     rgb[2] += kernelWeight*qBlue(pixel);
@@ -141,7 +141,7 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
     if(radius == 0)
         return;
 
-    int r, c, rd, cd, i;
+    int r, c, rd, cd, i; // Iterators
     QRgb pixel;
 
     // This is the size of the kernel: side of the kernal - odd
@@ -165,16 +165,16 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
     }
 
     // Make sure kernel sums to 1
-    double denom = 0.000001;
+    double denom = 0.0; //DEBUG
     for(i=0;i<size*size;i++)
         denom += kernel[i];
     for(i=0;i<size*size;i++)
         kernel[i] /= denom;
 
     // For each pixel in the image...
-    for(r=0;r<h;r++)
+    for(r=0;r<h/*image->height()*/;r++)
     {
-        for(c=0;c<w;c++)
+        for(c=0;c<w/*image->width()*/;c++)
         {
             double rgb[3];
 
@@ -187,12 +187,14 @@ void MainWindow::MeanBlurImage(QImage *image, int radius)
                 for(cd=-radius;cd<=radius;cd++)
                 {
                      // Get the pixel value
-                     pixel = buffer.pixel(c + cd + radius, r + rd + radius);
+                     pixel = buffer.pixel(c + cd + radius, r + rd + radius); //pixel is only a value
 
                      // Get the value of the kernel
                      double weight = kernel[(rd + radius)*size + cd + radius];
 
                      rgb[0] += weight*(double) qRed(pixel);
+                     /*int qRed(QRgb rgb)
+                     Returns the red component of the ARGB quadruplet rgb.*/
                      rgb[1] += weight*(double) qGreen(pixel);
                      rgb[2] += weight*(double) qBlue(pixel);
                 }
