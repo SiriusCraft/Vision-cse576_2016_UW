@@ -14,7 +14,7 @@
 const int default_radius=2;
 
 // Clamp Pixel
-QRgb ClampPixel(int r, int g, int b)
+QRgb normalize(int r, int g, int b)
 {
     return qRgb(max(0, min(255, r)),
                 max(0, min(255, g)),
@@ -22,14 +22,14 @@ QRgb ClampPixel(int r, int g, int b)
 }
 //Convolution
 
-void Convolve(QImage *image, double *kernel, int kernel_width, int kernel_height, bool fForDerivative)
+void Convolve(QImage *image, double *kernel, int kernelWidth, int kernelHeight, bool fForDerivative)
 {
     int height = image->height();
     int width = image->width();
-    int kernel_half_height = (kernel_height-1)/2;  //DEBUG
-    int kernel_half_width = (kernel_width-1)/2;
+    int kernelHalfHeight = (kernelHeight-1)/2;  //DEBUG
+    int kernelHalfWidth = (kernelWidth-1)/2;
     // Create an empty image 
-    QImage buffer = image->copy(-kernel_half_width, -kernel_half_height, width + 2*kernel_half_width, height + 2*kernel_half_height );
+    QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width+2*kernelHalfWidth, height+2*kernelHalfHeight);
     /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
      *  The returned image is copied from the position (x, y) in this image, and will always have the given width and height.
      *  In areas beyond this image, pixels are set to 0.*/
@@ -40,28 +40,29 @@ void Convolve(QImage *image, double *kernel, int kernel_width, int kernel_height
             double rgb[3];
             rgb[0]= rgb[1]= rgb[2]= (!fForDerivative ? 0.0 : 128.0);
 
-            for (int fy = 0; fy < kernel_height; fy++)
+            for (int fy = 0; fy < kernelHeight; fy++)
             {
-                for (int fx = 0; fx < kernel_width; fx++)
+                for (int fx = 0; fx < kernelWidth; fx++)
                 {
                     // Translate to coordinates in buffer space
                     int by = y + fy;
                     int bx = x + fx;
 
                     QRgb pixel = buffer.pixel(bx, by);
-                    double kernelWeight = kernel[fy*kernel_width+fx];
-                    rgb[0] += kernelWeight*qRed(pixel);
-                    rgb[1] += kernelWeight*qGreen(pixel);
-                    rgb[2] += kernelWeight*qBlue(pixel);
+                    double weight = kernel[fy*kernelWidth+fx];
+                    rgb[0] += weight*qRed(pixel);
+                    rgb[1] += weight*qGreen(pixel);
+                    rgb[2] += weight*qBlue(pixel);
                 }
             }
 
-            image->setPixel(x, y, ClampPixel(static_cast<int>(floor(rgb[0]+0.5)),
+            image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
                         static_cast<int>(floor(rgb[1]+0.5)),
                         static_cast<int>(floor(rgb[2]+0.5)))
                     );
         }
     }
+    return;
 }
 
 
