@@ -11,7 +11,7 @@
 ************************************************************************/
 
 // Some constants
-const int default_radius=2;
+const int defaultRadius=2;
 
 // Clamp Pixel
 QRgb normalize(int r, int g, int b)
@@ -234,9 +234,9 @@ void MainWindow::HalfImage(QImage &image)
 //Task1: GaussianBlurImage(QImage *image, double sigma) timing
 void MainWindow::GaussianBlurImage(QImage *image, double sigma)
 {
-    int radius=default_radius;
+    int radius=defaultRadius;
     int size = 2*radius+1;//size of the kernel
-    double rr=0.0, rev_sigma22=1.0/2*pow(sigma,2);
+    double rr=0.0, rev2Sigma2=1.0/2*pow(sigma,2);
     double *kernel = new double [size*size];
     int i = 0;
 
@@ -248,7 +248,7 @@ void MainWindow::GaussianBlurImage(QImage *image, double sigma)
     for(i = 0;i<size*size;i++)
     {
         rr=pow((int)i/size-radius,2)+pow(i%size,2);
-        kernel[i] = rev_sigma22/(M_PI)*exp(-rr*rev_sigma22);
+        kernel[i] = rev2Sigma2/(M_PI)*exp(-rr*rev2Sigma2);
     }
 }
 
@@ -261,20 +261,20 @@ void MainWindow::SeparableGaussianBlurImage(QImage *image, double sigma)
     }
 
     // Calculate the kernel (some extra computation/storage, should be fine...)
-    double twoSigSq = 2.0 * pow(sigma, 2);
-    double sigSqRt = sigma * sqrt(2*M_PI);
-    int kernelHalfSide = static_cast<int>(ceil(3 * sigma));
-    int kernelSize = ((2 * kernelHalfSide) + 1);
-    double *kernel = new double[kernelSize];
-    for (int i = 0; i < kernelSize; i++)
+    double rev2Sigma2=1.0/2*pow(sigma, 2);
+    double sigSqRt= sigma * sqrt(2*M_PI);
+    int radius= defaultRadius;
+    int kernelSize= 2*radius+1;
+    double *kernel= new double[kernelSize];
+    for (int i=0; i<kernelSize; i++)
     {
-        int y = (i - kernelHalfSide);
-        kernel[i] = (1.0 / (sigSqRt)) * pow(M_E, -1*(pow(y,2.0))/twoSigSq);
+        int y = i-radius;
+        kernel[i] = sqrt(rev2Sigma2/M_PI)*exp(-pow(y,2.0)*rev2Sigma2);
     }
 
     // Generate the updated image
-    ConvolveHelper(image, kernel, kernelSize, 1, false/*fForDerivative*/);
-    ConvolveHelper(image, kernel, 1, kernelSize, false/*fForDerivative*/);
+    Convolve(image, kernel, kernelSize, 1, false);
+    Convolve(image, kernel, 1, kernelSize, false);
 
     // Clean up!
     delete[] kernel;
