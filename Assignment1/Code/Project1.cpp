@@ -57,8 +57,9 @@ void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, 
             }
 
             image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
-                        static_cast<int>(floor(rgb[1]+0.5)),
-                        static_cast<int>(floor(rgb[2]+0.5)))
+                                            static_cast<int>(floor(rgb[1]+0.5)),
+                                            static_cast<int>(floor(rgb[2]+0.5))
+                            )
                     );
         }
     }
@@ -334,11 +335,10 @@ void MainWindow::SharpenImage(QImage *image, double sigma, double alpha)
         {
             QRgb pixel = image->pixel(x, y);
             QRgb pixelSecondDeriv = buffer.pixel(x, y);
-            image->setPixel(x, y, normalize(
-                        qRed(pixel) - alpha*(qRed(pixelSecondDeriv)-128),
-                        qGreen(pixel) - alpha*(qGreen(pixelSecondDeriv)-128),
-                        qBlue(pixel) - alpha*(qBlue(pixelSecondDeriv)-128)
-                    ));
+            image->setPixel(x, y, normalize(qRed(pixel) - alpha*(qRed(pixelSecondDeriv)-128),
+                                            qGreen(pixel) - alpha*(qGreen(pixelSecondDeriv)-128),
+                                            qBlue(pixel) - alpha*(qBlue(pixelSecondDeriv)-128)
+                                            ));
         }
     }
 }
@@ -351,11 +351,11 @@ void MainWindow::BilateralImage(QImage *image, double sigmaS, double sigmaI)
 void MainWindow::SobelImage(QImage *image)
 {
     double kernelX[9] = { -1,  0,  1,
-                           -2,  0,  2,
-                           -1,  0,  1 };
+                          -2,  0,  2,
+                          -1,  0,  1 };
     double kernelY[9] = {  1,  2,  1,
-                            0,  0,  0,
-                           -1, -2, -1 };
+                           0,  0,  0,
+                          -1, -2, -1 };
 
     QImage buffer = image->copy(-1, -1, image->width()+2, image->height()+2);
      int height = image->height();
@@ -396,13 +396,14 @@ void MainWindow::SobelImage(QImage *image)
               double red = (sin(orien) + 1.0)/2.0;
               double green = (cos(orien) + 1.0)/2.0;
               double blue = 1.0 - red - green;
-              red *= mag*4.0;
+              red   *= mag*4.0;
               green *= mag*4.0;
-              blue *= mag*4.0;
+              blue  *= mag*4.0;
 
               image->setPixel(x, y, normalize(static_cast<int>(floor(red+0.5)),
                                               static_cast<int>(floor(green+0.5)),
-                                              static_cast<int>(floor(blue+0.5))));
+                                              static_cast<int>(floor(blue+0.5))
+                                             ));
           }
       }
     /***********************************************************************
