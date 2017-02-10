@@ -13,16 +13,16 @@
 // Some constants
 const int defaultRadius=2;
 
-// Clamp Pixel
+// Keeping pixels in range
 QRgb normalize(int r, int g, int b)
 {
-    return qRgb(max(0, min(255, r)),
-                max(0, min(255, g)),
-                max(0, min(255, b)));
+    return qRgb(min(255, max(0, r)),
+                min(255, max(0, g)),
+                min(255, max(0, b)));
 }
 //Convolution
 
-void Convolve(QImage *image, double *kernel, int kernelWidth, int kernelHeight, bool fForDerivative)
+void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, bool isDerivative=false)
 {
     int height = image->height();
     int width = image->width();
@@ -38,7 +38,7 @@ void Convolve(QImage *image, double *kernel, int kernelWidth, int kernelHeight, 
         for (int x = 0; x<width; x++)
         {
             double rgb[3];
-            rgb[0]= rgb[1]= rgb[2]= (!fForDerivative ? 0.0 : 128.0);
+            rgb[0]= rgb[1]= rgb[2]= (!isDerivative?0.0:128.0);//derivative standard
 
             for (int fy = 0; fy < kernelHeight; fy++)
             {
@@ -250,6 +250,9 @@ void MainWindow::GaussianBlurImage(QImage *image, double sigma)
         rr=pow((int)i/size-radius,2)+pow(i%size,2);
         kernel[i] = rev2Sigma2/(M_PI)*exp(-rr*rev2Sigma2);
     }
+    //Convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, bool fForDerivative)
+    convolve(image, kernel, size, size);
+
 }
 
 //Task 2: SeparableGaussianBlurImage(QImage *image, double sigma)
@@ -273,26 +276,71 @@ void MainWindow::SeparableGaussianBlurImage(QImage *image, double sigma)
     }
 
     // Generate the updated image
-    Convolve(image, kernel, kernelSize, 1, false);
-    Convolve(image, kernel, 1, kernelSize, false);
+    convolve(image, kernel, 1, kernelSize, false); // x-direction
+    convolve(image, kernel, kernelSize, 1, false); // y-direction
 
     // Clean up!
     delete[] kernel;
 }
 
+//Task1 First Derivative
 void MainWindow::FirstDerivImage(QImage *image, double sigma)
 {
-    // Add your code here.
+    if (sigma <= 0)
+    {
+        return;
+    }
+
+    // Construct the kernel
+    double kernel[3] = { -1.0, 0.0, 1.0 };
+
+    // Generate the updated image
+
+    convolve(image, kernel, 1, 3, true);
+    GaussianBlurImage(image, sigma);
 }
 
 void MainWindow::SecondDerivImage(QImage *image, double sigma)
 {
-    // Add your code here.
+    if (sigma <= 0)
+    {
+        return;
+    }
+
+    // Construct the kernel
+    // (This is inverted relative to what the lecture slides suggested,
+    // otherwise the colors come out backwards...)
+    double kernel[9] = { 0.0,  1.0, 0.0,
+                         1.0, -4.0, 1.0,
+                         0.0,  1.0, 0.0 };
+
+    // Generate the updated image
+    convolve(image, kernel, 3, 3, true);
+    GaussianBlurImage(image, sigma);
 }
 
 void MainWindow::SharpenImage(QImage *image, double sigma, double alpha)
 {
-    // Add your code here.  It's probably easiest to call SecondDerivImage as a helper function.
+    // Generate the second derivative
+    QImage buffer(*image);
+    SecondDerivImage(&buffer, sigma);
+
+    // Subtract the second derivative from our original image
+    int height = image->height();
+    int width = image->width();
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            QRgb pixel = image->pixel(x, y);
+            QRgb pixelSecondDeriv = buffer.pixel(x, y);
+            image->setPixel(x, y, normalize(
+                        qRed(pixel) - alpha*(qRed(pixelSecondDeriv)-128),
+                        qGreen(pixel) - alpha*(qGreen(pixelSecondDeriv)-128),
+                        qBlue(pixel) - alpha*(qBlue(pixelSecondDeriv)-128)
+                    ));
+        }
+    }
 }
 
 void MainWindow::BilateralImage(QImage *image, double sigmaS, double sigmaI)
@@ -302,8 +350,61 @@ void MainWindow::BilateralImage(QImage *image, double sigmaS, double sigmaI)
 
 void MainWindow::SobelImage(QImage *image)
 {
-    // Add your code here.
+    double kernelX[9] = { -1,  0,  1,
+                           -2,  0,  2,
+                           -1,  0,  1 };
+    double kernelY[9] = {  1,  2,  1,
+                            0,  0,  0,
+                           -1, -2, -1 };
 
+    QImage buffer = image->copy(-1, -1, image->width()+2, image->height()+2);
+     int height = image->height();
+     int width = image->width();
+     for (int y = 0; y < height; y++)
+     {
+         for (int x = 0; x < width; x++)
+         {
+             double rgbX[3] = { 0.0, 0.0, 0.0 };
+             double rgbY[3] = { 0.0, 0.0, 0.0 };
+
+             for (int fy = 0; fy < 3; fy++)
+             {
+                 for (int fx = 0; fx < 3; fx++)
+                 {
+                     // Translate to coordinates in buffer space
+                     int by = y + fy;
+                     int bx = x + fx;
+
+                     QRgb pixel = buffer.pixel(bx, by);
+                     double kernelWeightX = kernelX[fy*3+fx];
+                     rgbX[0] += kernelWeightX*qRed(pixel);
+                     rgbX[1] += kernelWeightX*qGreen(pixel);
+                     rgbX[2] += kernelWeightX*qBlue(pixel);
+                     double kernelWeightY = kernelY[fy*3+fy];
+                     rgbY[0] += kernelWeightY*qRed(pixel);
+                     rgbY[1] += kernelWeightY*qGreen(pixel);
+                     rgbY[2] += kernelWeightY*qBlue(pixel);
+                 }
+             }
+             // Using the intensity function from BlackWhiteImage:
+              double intensityX = 0.3*rgbX[0] + 0.6*rgbX[1] + 0.1*rgbX[2];
+              double intensityY = 0.3*rgbY[0] + 0.6*rgbY[1] + 0.1*rgbY[2];
+
+              // Provided Sobel helper code
+              double mag = sqrt(pow(intensityX, 2) + pow(intensityY, 2));
+              double orien = atan2(intensityY, intensityX);
+              double red = (sin(orien) + 1.0)/2.0;
+              double green = (cos(orien) + 1.0)/2.0;
+              double blue = 1.0 - red - green;
+              red *= mag*4.0;
+              green *= mag*4.0;
+              blue *= mag*4.0;
+
+              image->setPixel(x, y, normalize(static_cast<int>(floor(red+0.5)),
+                                              static_cast<int>(floor(green+0.5)),
+                                              static_cast<int>(floor(blue+0.5))));
+          }
+      }
     /***********************************************************************
       When displaying the orientation image I
       recommend the following:
