@@ -435,70 +435,71 @@ void MainWindow::SobelImage(QImage *image)
 
 void MainWindow::BilinearInterpolation(QImage *image, double x, double y, double rgb[3])
 {
-    qDebug()<<"Entering Bilinear\n";
-    /*int height = image->height();
-    int width = image->width();
-    int x1 = static_cast<int>(floor(x)), y1 = static_cast<int>(floor(y)),
-        x2 = static_cast<int>(ceil(x+0.00001)), y2 = static_cast<int>(ceil(y+0.00001));// Keeping x1 and x2 not equal, y1 and y2 not equal
-    qDebug()<<"Debug\n";
+    int height= image->height();
+    int width= image->width();
+    int x1= static_cast<int>(floor(x)), y1= static_cast<int>(floor(y)),
+        x2= static_cast<int>(ceil(x+0.00001)), y2= static_cast<int>(ceil(y+0.00001));// Keeping x1 and x2 not equal, y1 and y2 not equal
+    double a= x-x1, b= y-y1;
     QRgb pixel11 = ((0<=x1&&x1<width&&0<=y1&&y1<height)?image->pixel(x1, y1):qRgb(0, 0, 0));//Keeping pixel in range
     QRgb pixel12 = ((0<=x1&&x1<width&&0<=y2&&y2<height)?image->pixel(x1, y2):qRgb(0, 0, 0));
     QRgb pixel21 = ((0<=x2&&x2<width&&0<=y1&&y1<height)?image->pixel(x2, y1):qRgb(0, 0, 0));
     QRgb pixel22 = ((0<=x2&&x2<width&&0<=y2&&y2<height)?image->pixel(x2, y2):qRgb(0, 0, 0));
 
-    for (int i = 0; i < 3; i++)
-    {
-        qDebug()<<"test\n";
-        int (*colorfn)(QRgb)=(0==i?qRed:(1==i?qGreen:qBlue));
-        rgb[i] = 1.0/((x2-x1)*(y2-y1))*(((*colorfn)(pixel11)*(x2-x)*(y2-y))+
-                                          ((*colorfn)(pixel21)*(x-x1)*(y2-y))+
-                                          ((*colorfn)(pixel12)*(x2-x)*(y-y1))+
-                                          ((*colorfn)(pixel22)*(x-x1)*(y-y1))
-                                          );
-    }*/
+    rgb[0] = (1-a)*(1-b)*qRed(pixel11)+
+             a*(1-b)*(qRed(pixel21)+
+             (1-a)*b*qRed(pixel12)+
+             a*b*qRed(pixel22)
+             );
+    rgb[1] = (1-a)*(1-b)*qGreen(pixel11)+
+             a*(1-b)*(qGreen(pixel21)+
+             (1-a)*b*qGreen(pixel12)+
+             a*b*qGreen(pixel22)
+             );
+    rgb[2] = (1-a)*(1-b)*qBlue(pixel11)+
+             a*(1-b)*(qBlue(pixel21)+
+             (1-a)*b*qBlue(pixel12)+
+             a*b*qBlue(pixel22)
+             );
 }
 
 // Here is some sample code for rotating an image.  I assume orien is in degrees.
 
-void MainWindow::RotateImage(QImage *image, double orien)
+void MainWindow::RotateImage(QImage *image, double orien) // Needs a debug
 {
-    int r, c;
     QRgb pixel;
     QImage buffer;
-    int w = image->width();
-    int h = image->height();
-    double radians = -2.0*3.141*orien/360.0;
-
+    int i, j;
+    int width = image->width();
+    int height = image->height();
+    double radians = -2.0*M_PI*orien/360.0;
     buffer = image->copy();
 
     pixel = qRgb(0, 0, 0);
     image->fill(pixel);
 
-    for(r=0;r<h;r++)
+    for(i=0;i<height;i++)
     {
-        for(c=0;c<w;c++)
+        for(j=0;j<width;j++)
         {
             double rgb[3];
             double x0, y0;
             double x1, y1;
-
-            // Rotate around the center of the image.
-            x0 = (double) (c - w/2);
-            y0 = (double) (r - h/2);
+            // Rotate around the center of the image (width, height) - reference point
+            x0= static_cast<double>(j-width/2);
+            y0= static_cast<double>(i-height/2);
 
             // Rotate using rotation matrix
-            x1 = x0*cos(radians) - y0*sin(radians);
-            y1 = x0*sin(radians) + y0*cos(radians);
+            x1= x0*cos(radians)-y0*sin(radians)+static_cast<double>(width/2);
+            y1= x0*sin(radians)+y0*cos(radians)+static_cast<double>(height/2);
+            BilinearInterpolation(&buffer, x1, y1, rgb); // Up Sampling
 
-            x1 += (double) (w/2);
-            y1 += (double) (h/2);
-
-            BilinearInterpolation(&buffer, x1, y1, rgb);
-
-            image->setPixel(c, r, qRgb((int) floor(rgb[0] + 0.5), (int) floor(rgb[1] + 0.5), (int) floor(rgb[2] + 0.5)));
+            // j is the x-coordinate, i is the y-coordinate
+            image->setPixel(j, i, normalize(static_cast<int>(floor(rgb[0]+0.5)),
+                                            static_cast<int>(floor(rgb[1]+0.5)),
+                                            static_cast<int>(floor(rgb[2]+0.5)))
+                            );
         }
     }
-
 }
 
 void MainWindow::FindPeaksImage(QImage *image, double thres)
