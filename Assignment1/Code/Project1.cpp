@@ -350,6 +350,7 @@ void MainWindow::BilateralImage(QImage *image, double sigmaS, double sigmaI)
 
 void MainWindow::SobelImage(QImage *image)
 {
+        qDebug()<<"Entering Sobel\n";
     double kernelX[9] = { -1,  0,  1,
                           -2,  0,  2,
                           -1,  0,  1 };
@@ -386,11 +387,11 @@ void MainWindow::SobelImage(QImage *image)
                      rgbY[2] += kernelWeightY*qBlue(pixel);
                  }
              }
-             // Using the intensity function from BlackWhiteImage:
+             // intensityX, intensityY from BlackWhiteImage(QImage *image)
               double intensityX = 0.3*rgbX[0] + 0.6*rgbX[1] + 0.1*rgbX[2];
               double intensityY = 0.3*rgbY[0] + 0.6*rgbY[1] + 0.1*rgbY[2];
 
-              // Provided Sobel helper code
+              // displaying the orientation image
               double mag = sqrt(pow(intensityX, 2) + pow(intensityY, 2));
               double orien = atan2(intensityY, intensityX);
               double red = (sin(orien) + 1.0)/2.0;
@@ -434,11 +435,12 @@ void MainWindow::SobelImage(QImage *image)
 
 void MainWindow::BilinearInterpolation(QImage *image, double x, double y, double rgb[3])
 {
-    int height = image->height();
+    qDebug()<<"Entering Bilinear\n";
+    /*int height = image->height();
     int width = image->width();
     int x1 = static_cast<int>(floor(x)), y1 = static_cast<int>(floor(y)),
         x2 = static_cast<int>(ceil(x+0.00001)), y2 = static_cast<int>(ceil(y+0.00001));// Keeping x1 and x2 not equal, y1 and y2 not equal
-
+    qDebug()<<"Debug\n";
     QRgb pixel11 = ((0<=x1&&x1<width&&0<=y1&&y1<height)?image->pixel(x1, y1):qRgb(0, 0, 0));//Keeping pixel in range
     QRgb pixel12 = ((0<=x1&&x1<width&&0<=y2&&y2<height)?image->pixel(x1, y2):qRgb(0, 0, 0));
     QRgb pixel21 = ((0<=x2&&x2<width&&0<=y1&&y1<height)?image->pixel(x2, y1):qRgb(0, 0, 0));
@@ -447,13 +449,13 @@ void MainWindow::BilinearInterpolation(QImage *image, double x, double y, double
     for (int i = 0; i < 3; i++)
     {
         qDebug()<<"test\n";
-        /**int (*colorfn)(QRgb)=(0==i?qRed:(1==i?qGreen:qBlue));
+        int (*colorfn)(QRgb)=(0==i?qRed:(1==i?qGreen:qBlue));
         rgb[i] = 1.0/((x2-x1)*(y2-y1))*(((*colorfn)(pixel11)*(x2-x)*(y2-y))+
                                           ((*colorfn)(pixel21)*(x-x1)*(y2-y))+
                                           ((*colorfn)(pixel12)*(x2-x)*(y-y1))+
                                           ((*colorfn)(pixel22)*(x-x1)*(y-y1))
-                                          );*/
-    }
+                                          );
+    }*/
 }
 
 // Here is some sample code for rotating an image.  I assume orien is in degrees.
