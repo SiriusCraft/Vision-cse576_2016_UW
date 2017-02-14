@@ -17,6 +17,63 @@ Draw detected Harris corners
 
     Draws a red cross on top of detected corners
 *******************************************************************************/
+// Some constants
+const int defaultRadius=2;
+
+// Keeping pixels in range
+QRgb normalize(int r, int g, int b)
+{
+    return qRgb(min(255, max(0, r)),
+                min(255, max(0, g)),
+                min(255, max(0, b)));
+}
+
+//Convolution
+void convolve(double *image, double *kernel, int kernelHeight, int kernelWidth, bool isDerivative=false)
+{
+    int height = image->height();
+    int width = image->width();
+    int kernelHalfHeight = (kernelHeight-1)/2;  //DEBUG
+    int kernelHalfWidth = (kernelWidth-1)/2;
+    // Create an empty image
+    QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width+2*kernelHalfWidth, height+2*kernelHalfHeight);
+    /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
+     *  The returned image is copied from the position (x, y) in this image, and will always have the given width and heig
+ht.
+     *  In areas beyond this image, pixels are set to 0.*/
+    for (int y = 0; y<height; y++)
+    {
+        for (int x = 0; x<width; x++)
+        {
+            double rgb[3];
+            rgb[0]= rgb[1]= rgb[2]= (!isDerivative?0.0:128.0);//derivative standard
+
+            for (int fy = 0; fy < kernelHeight; fy++)
+            {
+                for (int fx = 0; fx < kernelWidth; fx++)
+                {
+                    // Translate to coordinates in buffer space
+                    int by = y + fy;
+                    int bx = x + fx;
+
+                    QRgb pixel = buffer.pixel(bx, by);
+                    double weight = kernel[fy*kernelWidth+fx];
+                    rgb[0] += weight*qRed(pixel);
+                    rgb[1] += weight*qGreen(pixel);
+                    rgb[2] += weight*qBlue(pixel);
+                }
+            }
+
+            image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
+                                            static_cast<int>(floor(rgb[1]+0.5)),
+                                            static_cast<int>(floor(rgb[2]+0.5))
+                            )
+                    );
+        }
+    }
+    return;
+}
+
 void MainWindow::DrawInterestPoints(CIntPt *interestPts, int numInterestsPts, QImage &imageDisplay)
 {
    int i;
@@ -258,10 +315,32 @@ Blur a single channel floating point image with a Gaussian.
 
     This code should be very similar to the code you wrote for assignment 1.
 *******************************************************************************/
+
 void MainWindow::SeparableGaussianBlurImage(double *image, int w, int h, double sigma)
 {
-    // Add your code here
+    if (sigma <= 0)
+    {
+        return;
+    }
 
+    // Calculate the kernel (some extra computation/storage, should be fine...)
+    double rev2Sigma2=1.0/2*pow(sigma, 2);
+    double sigSqRt= sigma * sqrt(2*M_PI);
+    int radius= defaultRadius;
+    int kernelSize= 2*radius+1;
+    double *kernel= new double[kernelSize];
+    for (int i=0; i<kernelSize; i++)
+    {
+        int y = i-radius;
+        kernel[i] = sqrt(rev2Sigma2/M_PI)*exp(-pow(y,2.0)*rev2Sigma2);
+    }
+
+    // Generate the updated image
+    convolve(image, kernel, 1, kernelSize, false); // x-direction
+    convolve(image, kernel, kernelSize, 1, false); // y-direction
+
+    // Clean up!
+    delete[] kernel;
     // To access the pixel (c,r), use image[r*width + c].
 
 }
