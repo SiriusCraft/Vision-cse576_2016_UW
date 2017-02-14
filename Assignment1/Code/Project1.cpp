@@ -20,8 +20,8 @@ QRgb normalize(int r, int g, int b)
                 min(255, max(0, g)),
                 min(255, max(0, b)));
 }
-//Convolution
 
+//Convolution
 void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, bool isDerivative=false)
 {
     int height = image->height();
