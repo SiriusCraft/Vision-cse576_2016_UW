@@ -29,10 +29,8 @@ QRgb normalize(int r, int g, int b)
 }
 
 //Convolution
-void convolve(double *image, double *kernel, int kernelHeight, int kernelWidth, bool isDerivative=false)
+void convolve(double *image, double *kernel, int height, int width, int kernelHeight, int kernelWidth, bool isDerivative=false)
 {
-    int height = image->height();
-    int width = image->width();
     int kernelHalfHeight = (kernelHeight-1)/2;  //DEBUG
     int kernelHalfWidth = (kernelWidth-1)/2;
     // Create an empty image
