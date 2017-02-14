@@ -350,7 +350,6 @@ void MainWindow::BilateralImage(QImage *image, double sigmaS, double sigmaI)
 
 void MainWindow::SobelImage(QImage *image)
 {
-        qDebug()<<"Entering Sobel\n";
     double kernelX[9] = { -1,  0,  1,
                           -2,  0,  2,
                           -1,  0,  1 };
@@ -359,52 +358,48 @@ void MainWindow::SobelImage(QImage *image)
                           -1, -2, -1 };
 
     QImage buffer = image->copy(-1, -1, image->width()+2, image->height()+2);
-     int height = image->height();
-     int width = image->width();
-     for (int y = 0; y < height; y++)
-     {
-         for (int x = 0; x < width; x++)
-         {
-             double rgbX[3] = { 0.0, 0.0, 0.0 };
-             double rgbY[3] = { 0.0, 0.0, 0.0 };
-
-             for (int fy = 0; fy < 3; fy++)
-             {
-                 for (int fx = 0; fx < 3; fx++)
-                 {
-                     // Translate to coordinates in buffer space
-                     int by = y + fy;
-                     int bx = x + fx;
-
-                     QRgb pixel = buffer.pixel(bx, by);
-                     double kernelWeightX = kernelX[fy*3+fx];
-                     rgbX[0] += kernelWeightX*qRed(pixel);
-                     rgbX[1] += kernelWeightX*qGreen(pixel);
-                     rgbX[2] += kernelWeightX*qBlue(pixel);
-                     double kernelWeightY = kernelY[fy*3+fy];
-                     rgbY[0] += kernelWeightY*qRed(pixel);
-                     rgbY[1] += kernelWeightY*qGreen(pixel);
-                     rgbY[2] += kernelWeightY*qBlue(pixel);
-                 }
-             }
-             // Tunning the image to black and white
-              double intensityX = 0.3*rgbX[0] + 0.6*rgbX[1] + 0.1*rgbX[2];
-              double intensityY = 0.3*rgbY[0] + 0.6*rgbY[1] + 0.1*rgbY[2];
-
-              // displaying the orientation image
-              double mag = abs(intensityX) + abs(intensityY);
-              double orien = atan2(intensityY, intensityX);
-              double red = (sin(orien)+1.0)/2.0;
-              double green = (cos(orien)+1.0)/2.0;
-              double blue = 1.0-red-green;
-              red   *= mag*4.0;
-              green *= mag*4.0;
-              blue  *= mag*4.0;
-
-              image->setPixel(x, y, normalize(static_cast<int>(floor(red+0.5)),
-                                              static_cast<int>(floor(green+0.5)),
-                                              static_cast<int>(floor(blue+0.5))
-                                             ));
+    int height = image->height();
+    int width = image->width();
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            double rgbX[3] = { 0.0, 0.0, 0.0 };
+            double rgbY[3] = { 0.0, 0.0, 0.0 };
+            for (int fy = 0; fy < 3; fy++)
+            {
+                for (int fx = 0; fx < 3; fx++)
+                {
+                    // Translate to coordinates in buffer space
+                    int by = y + fy;
+                    int bx = x + fx;
+                    QRgb pixel = buffer.pixel(bx, by);
+                    double kernelWeightX = kernelX[fy*3+fx];
+                    rgbX[0] += kernelWeightX*qRed(pixel);
+                    rgbX[1] += kernelWeightX*qGreen(pixel);
+                    rgbX[2] += kernelWeightX*qBlue(pixel);
+                    double kernelWeightY = kernelY[fy*3+fy];
+                    rgbY[0] += kernelWeightY*qRed(pixel);
+                    rgbY[1] += kernelWeightY*qGreen(pixel);
+                    rgbY[2] += kernelWeightY*qBlue(pixel);
+                }
+            }
+            // Tunning the image to black and white
+             double intensityX = 0.3*rgbX[0] + 0.6*rgbX[1] + 0.1*rgbX[2];
+             double intensityY = 0.3*rgbY[0] + 0.6*rgbY[1] + 0.1*rgbY[2];
+             // displaying the orientation image
+             double mag = abs(intensityX) + abs(intensityY);
+             double orien = atan2(intensityY, intensityX);
+             double red = (sin(orien)+1.0)/2.0;
+             double green = (cos(orien)+1.0)/2.0;
+             double blue = 1.0-red-green;
+             red   *= mag*4.0;
+             green *= mag*4.0;
+             blue  *= mag*4.0;
+             image->setPixel(x, y, normalize(static_cast<int>(floor(red+0.5)),
+                                             static_cast<int>(floor(green+0.5)),
+                                             static_cast<int>(floor(blue+0.5))
+                                            ));
           }
       }
 }
@@ -479,9 +474,59 @@ void MainWindow::RotateImage(QImage *image, double orien) // Needs a debug
     }
 }
 
-void MainWindow::FindPeaksImage(QImage *image, double thres)
+void MainWindow::FindPeaksImage(QImage *image, double thres)// Needs correction
 {
-    // Add your code here.
+    double kernelX[9] = { -1,  0,  1,
+                          -2,  0,  2,
+                          -1,  0,  1 };
+    double kernelY[9] = {  1,  2,  1,
+                           0,  0,  0,
+                          -1, -2, -1 };
+    QImage buffer = image->copy(-1, -1, image->width()+2, image->height()+2);
+    QImage magnitude(image->size(), image->format());
+    int height = image->height();
+    int width = image->width();
+    for (int y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            double rgbX[3] = { 0.0, 0.0, 0.0 };
+            double rgbY[3] = { 0.0, 0.0, 0.0 };
+            for (int fy = 0; fy < 3; fy++)
+            {
+                for (int fx = 0; fx < 3; fx++)
+                {
+                    // Translate to coordinates in buffer space
+                    int by = y + fy;
+                    int bx = x + fx;
+                    QRgb pixel = buffer.pixel(bx, by);
+                    double kernelWeightX = kernelX[fy*3+fx];
+                    rgbX[0] += kernelWeightX*qRed(pixel);
+                    rgbX[1] += kernelWeightX*qGreen(pixel);
+                    rgbX[2] += kernelWeightX*qBlue(pixel);
+                    double kernelWeightY = kernelY[fy*3+fy];
+                    rgbY[0] += kernelWeightY*qRed(pixel);
+                    rgbY[1] += kernelWeightY*qGreen(pixel);
+                    rgbY[2] += kernelWeightY*qBlue(pixel);
+                }
+            }
+             // Tunning the image to black and white
+             double intensityX = 0.3*rgbX[0] + 0.6*rgbX[1] + 0.1*rgbX[2];
+             double intensityY = 0.3*rgbY[0] + 0.6*rgbY[1] + 0.1*rgbY[2];
+
+             // displaying the orientation image
+             double mag = abs(intensityX) + abs(intensityY);
+
+             /* red channel   = magnitude/6
+              * green channel = intensityX/8+128
+              * blue channel  = intensityY/8+128 */
+             magnitude.setPixel(x, y, normalize(static_cast<int>(floor((mag/6)+0.5)),
+                                            static_cast<int>(floor((intensityX/8+128)+0.5)),
+                                            static_cast<int>(floor((intensityY/8+128)+0.5))));
+
+         }
+      }
+
 }
 
 
