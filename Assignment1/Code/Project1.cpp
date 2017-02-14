@@ -387,16 +387,16 @@ void MainWindow::SobelImage(QImage *image)
                      rgbY[2] += kernelWeightY*qBlue(pixel);
                  }
              }
-             // intensityX, intensityY from BlackWhiteImage(QImage *image)
+             // Tunning the image to black and white
               double intensityX = 0.3*rgbX[0] + 0.6*rgbX[1] + 0.1*rgbX[2];
               double intensityY = 0.3*rgbY[0] + 0.6*rgbY[1] + 0.1*rgbY[2];
 
               // displaying the orientation image
-              double mag = sqrt(pow(intensityX, 2) + pow(intensityY, 2));
+              double mag = abs(intensityX) + abs(intensityY);
               double orien = atan2(intensityY, intensityX);
-              double red = (sin(orien) + 1.0)/2.0;
-              double green = (cos(orien) + 1.0)/2.0;
-              double blue = 1.0 - red - green;
+              double red = (sin(orien)+1.0)/2.0;
+              double green = (cos(orien)+1.0)/2.0;
+              double blue = 1.0-red-green;
               red   *= mag*4.0;
               green *= mag*4.0;
               blue  *= mag*4.0;
@@ -407,29 +407,6 @@ void MainWindow::SobelImage(QImage *image)
                                              ));
           }
       }
-    /***********************************************************************
-      When displaying the orientation image I
-      recommend the following:
-
-    double mag; // magnitude of the gradient
-    double orien; // orientation of the gradient
-
-    double red = (sin(orien) + 1.0)/2.0;
-    double green = (cos(orien) + 1.0)/2.0;
-    double blue = 1.0 - red - green;
-
-    red *= mag*4.0;
-    green *= mag*4.0;
-    blue *= mag*4.0;
-
-    // Make sure the pixel values range from 0 to 255
-    red = min(255.0, max(0.0, red));
-    green = min(255.0, max(0.0, green));
-    blue = min(255.0, max(0.0, blue));
-
-    image->setPixel(c, r, qRgb( (int) (red), (int) (green), (int) (blue)));
-
-    ************************************************************************/
 }
 
 
