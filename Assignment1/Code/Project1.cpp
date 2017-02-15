@@ -28,43 +28,42 @@ void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, 
     int width = image->width();
     int kernelHalfHeight = (kernelHeight-1)/2;  //DEBUG
     int kernelHalfWidth = (kernelWidth-1)/2;
-    // Create an empty image 
+    // Create an empty image
     QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width+2*kernelHalfWidth, height+2*kernelHalfHeight);
     /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
-     *  The returned image is copied from the position (x, y) in this image, and will always have the given width and height.
+     *  The returned image is copied from the position (x, y) in this image, and will always have the given width and heig
+ht.
      *  In areas beyond this image, pixels are set to 0.*/
-    for (int y = 0; y<height; y++)
+    for (int y= 0; y<height; y++)
     {
-        for (int x = 0; x<width; x++)
+        for (int x= 0; x<width; x++)
         {
             double rgb[3];
-            rgb[0]= rgb[1]= rgb[2]= (!isDerivative?0.0:128.0);//derivative standard
+            rgb[0]= rgb[1]= rgb[2]= (!isDerivative? 0.0 : 128.0);//derivative standard
 
-            for (int fy = 0; fy < kernelHeight; fy++)
+            for (int fy= 0; fy < kernelHeight; fy++)
             {
-                for (int fx = 0; fx < kernelWidth; fx++)
+                for (int fx= 0; fx < kernelWidth; fx++)
                 {
-                    // Translate to coordinates in buffer space
-                    int by = y + fy;
-                    int bx = x + fx;
+                    int by= y + fy;
+                    int bx= x + fx;
+                    QRgb pixel= buffer.pixel(bx, by);
+                    double weight= kernel[fy*kernelWidth+fx];
+                    rgb[0]+= weight*qRed(pixel);
+                    rgb[1]+= weight*qGreen(pixel);
+                    rgb[2]+= weight*qBlue(pixel);
+                 }
+             }
 
-                    QRgb pixel = buffer.pixel(bx, by);
-                    double weight = kernel[fy*kernelWidth+fx];
-                    rgb[0] += weight*qRed(pixel);
-                    rgb[1] += weight*qGreen(pixel);
-                    rgb[2] += weight*qBlue(pixel);
-                }
-            }
-
-            image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
-                                            static_cast<int>(floor(rgb[1]+0.5)),
-                                            static_cast<int>(floor(rgb[2]+0.5))
-                            )
-                    );
-        }
-    }
-    return;
-}
+             image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
+                                             static_cast<int>(floor(rgb[1]+0.5)),
+                                             static_cast<int>(floor(rgb[2]+0.5))
+                             )
+                     );
+         }
+     }
+     return;
+ }
 
 
 // The first four functions provide example code to help get you started
@@ -251,7 +250,6 @@ void MainWindow::GaussianBlurImage(QImage *image, double sigma)
         rr=pow((int)i/size-radius,2)+pow(i%size,2);
         kernel[i] = rev2Sigma2/(M_PI)*exp(-rr*rev2Sigma2);
     }
-    //Convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, bool fForDerivative)
     convolve(image, kernel, size, size);
 
 }
