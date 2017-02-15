@@ -28,9 +28,14 @@ QRgb normalize(int r, int g, int b)
                 min(255, max(0, b)));
 }
 
+
 //Convolution
-void convolve(double *image, double *kernel, int height, int width, int kernelHeight, int kernelWidth, bool isDerivative=false)
+//Convolution 1： overload for and three chanel QImage-type image
+
+void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, bool isDerivative=false)
 {
+    int height = image->height();
+    int width = image->width();
     int kernelHalfHeight = (kernelHeight-1)/2;  //DEBUG
     int kernelHalfWidth = (kernelWidth-1)/2;
     // Create an empty image
@@ -39,38 +44,72 @@ void convolve(double *image, double *kernel, int height, int width, int kernelHe
      *  The returned image is copied from the position (x, y) in this image, and will always have the given width and heig
 ht.
      *  In areas beyond this image, pixels are set to 0.*/
-    for (int y = 0; y<height; y++)
+    for (int y= 0; y<height; y++)
     {
-        for (int x = 0; x<width; x++)
+        for (int x= 0; x<width; x++)
         {
             double rgb[3];
-            rgb[0]= rgb[1]= rgb[2]= (!isDerivative?0.0:128.0);//derivative standard
+            rgb[0]= rgb[1]= rgb[2]= (!isDerivative? 0.0 : 128.0);//derivative standard
 
-            for (int fy = 0; fy < kernelHeight; fy++)
+            for (int fy= 0; fy < kernelHeight; fy++)
             {
-                for (int fx = 0; fx < kernelWidth; fx++)
+                for (int fx= 0; fx < kernelWidth; fx++)
                 {
-                    // Translate to coordinates in buffer space
-                    int by = y + fy;
-                    int bx = x + fx;
+                    int by= y + fy;
+                    int bx= x + fx;
+                    QRgb pixel= buffer.pixel(bx, by);
+                    double weight= kernel[fy*kernelWidth+fx];
+                    rgb[0]+= weight*qRed(pixel);
+                    rgb[1]+= weight*qGreen(pixel);
+                    rgb[2]+= weight*qBlue(pixel);
+                 }
+             }
 
-                    QRgb pixel = buffer.pixel(bx, by);
-                    double weight = kernel[fy*kernelWidth+fx];
-                    rgb[0] += weight*qRed(pixel);
-                    rgb[1] += weight*qGreen(pixel);
-                    rgb[2] += weight*qBlue(pixel);
-                }
-            }
+             image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
+                                             static_cast<int>(floor(rgb[1]+0.5)),
+                                             static_cast<int>(floor(rgb[2]+0.5))
+                             )
+                     );
+         }
+     }
+     return;
+ }
 
-            image->setPixel(x, y, normalize(static_cast<int>(floor(rgb[0]+0.5)),
-                                            static_cast<int>(floor(rgb[1]+0.5)),
-                                            static_cast<int>(floor(rgb[2]+0.5))
-                            )
-                    );
+
+//Convolution 2: overload for a single chanel floating image
+void convolve(double *image, int height, int width, double *kernel, int kernelHeight, int kernelWidth)
+{
+    int kernelHalfHeight = (kernelHeight-1)/2;
+    int kernelHalfWidth = (kernelWidth-1)/2;
+    int bufferHeight = (height+2*kernelHalfHeight);
+    int bufferWidth = (width+2*kernelHalfWidth);
+    int bx, by, ix, iy, fx, fy;
+
+    // Create an empty image
+    double *buffer = new double[bufferHeight*bufferWidth];  // DEBUG
+    for (bx=0; bx<bufferWidth; bx++)
+        for (by=0; by<bufferHeight; by++)
+        {
+            ix= bx-kernelWidth, iy= by-kernelHeight;
+            buffer[bx+bufferWidth*by]= (ix<0||ix>width||iy<0||iy>height) ? 0.0 : image[ix+width*iy];
+        }
+
+    // Do the convolution
+    for (ix= 0; ix<width; ix++)
+    {
+        for (iy= 0; iy<height; iy++)
+        {
+            pixel= 0.0;
+            for (fx= 0; fx<kernelWidth; fx++)
+                for (fy= 0; fy<kernelHeight; fy++)
+                    bx= by;
+                    pixel+= kernel[fy+fx*kernelWidth]*buffer[]
         }
     }
     return;
 }
+
+
 
 void MainWindow::DrawInterestPoints(CIntPt *interestPts, int numInterestsPts, QImage &imageDisplay)
 {
@@ -334,8 +373,8 @@ void MainWindow::SeparableGaussianBlurImage(double *image, int w, int h, double 
     }
 
     // Generate the updated image
-    convolve(image, kernel, 1, kernelSize, false); // x-direction
-    convolve(image, kernel, kernelSize, 1, false); // y-direction
+    convolve(image, h, w, kernel, 1, kernelSize); // x-direction
+    convolve(image, h, w, kernel, kernelSize, 1); // y-direction
 
     // Clean up!
     delete[] kernel;
