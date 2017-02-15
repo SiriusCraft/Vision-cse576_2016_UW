@@ -38,25 +38,26 @@ void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, 
     int width = image->width();
     int kernelHalfHeight = (kernelHeight-1)/2;  //DEBUG
     int kernelHalfWidth = (kernelWidth-1)/2;
+    int x,y,bx,by,fx,fy;
     // Create an empty image
     QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width+2*kernelHalfWidth, height+2*kernelHalfHeight);
     /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
      *  The returned image is copied from the position (x, y) in this image, and will always have the given width and heig
 ht.
      *  In areas beyond this image, pixels are set to 0.*/
-    for (int y= 0; y<height; y++)
+    for (y= 0; y<height; y++)
     {
-        for (int x= 0; x<width; x++)
+        for (x= 0; x<width; x++)
         {
             double rgb[3];
             rgb[0]= rgb[1]= rgb[2]= (!isDerivative? 0.0 : 128.0);//derivative standard
 
-            for (int fy= 0; fy < kernelHeight; fy++)
+            for (fy= 0; fy < kernelHeight; fy++)
             {
-                for (int fx= 0; fx < kernelWidth; fx++)
+                for (fx= 0; fx < kernelWidth; fx++)
                 {
-                    int by= y + fy;
-                    int bx= x + fx;
+                    by= y + fy;
+                    bx= x + fx;
                     QRgb pixel= buffer.pixel(bx, by);
                     double weight= kernel[fy*kernelWidth+fx];
                     rgb[0]+= weight*qRed(pixel);
@@ -84,7 +85,7 @@ void convolve(double *image, int height, int width, double *kernel, int kernelHe
     int bufferHeight = (height+2*kernelHalfHeight);
     int bufferWidth = (width+2*kernelHalfWidth);
     int bx, by, ix, iy, fx, fy;
-
+    double pixel;
     // Create an empty image
     double *buffer = new double[bufferHeight*bufferWidth];  // DEBUG
     for (bx=0; bx<bufferWidth; bx++)
@@ -102,8 +103,10 @@ void convolve(double *image, int height, int width, double *kernel, int kernelHe
             pixel= 0.0;
             for (fx= 0; fx<kernelWidth; fx++)
                 for (fy= 0; fy<kernelHeight; fy++)
-                    bx= by;
-                    pixel+= kernel[fy+fx*kernelWidth]*buffer[]
+                    bx= iy+fx;
+                    by= iy+fy;
+                    pixel+= kernel[fy+fx*kernelWidth]*buffer[by+bx*bufferWidth];
+            image[iy+ix*width]=pixel;
         }
     }
     return;
