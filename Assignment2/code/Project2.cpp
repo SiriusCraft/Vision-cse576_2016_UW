@@ -20,7 +20,7 @@ Draw detected Harris corners
 // Some constants
 const int defaultRadius=2;
 
-// Keeping pixels in range
+// Keeping QRgb three-chanel pixels in range
 QRgb normalize(int r, int g, int b)
 {
     return qRgb(min(255, max(0, r)),
@@ -41,10 +41,6 @@ void convolve(QImage *image, double *kernel, int kernelHeight, int kernelWidth, 
     int x,y,bx,by,fx,fy;
     // Create an empty image
     QImage buffer = image->copy(-kernelHalfWidth, -kernelHalfHeight, width+2*kernelHalfWidth, height+2*kernelHalfHeight);
-    /*  QImage QImage::copy(const QRect & rectangle = QRect()) const
-     *  The returned image is copied from the position (x, y) in this image, and will always have the given width and heig
-ht.
-     *  In areas beyond this image, pixels are set to 0.*/
     for (y= 0; y<height; y++)
     {
         for (x= 0; x<width; x++)
