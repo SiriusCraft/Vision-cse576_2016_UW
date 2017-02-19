@@ -13,7 +13,7 @@ template <class T> const T& min ( const T& a, const T& b ) {
 
 #define DESC_SIZE   8
 
-class CIntPt
+class CIntPt // the class for interest points
 {
 public:
     double m_X;  // X position of interest point
