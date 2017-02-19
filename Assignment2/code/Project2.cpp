@@ -4,6 +4,8 @@
 #include <QtGui>
 #include "Matrix.h"
 
+#include <QDebug>//DEBUG
+
 /*******************************************************************************
     The following are helper routines with code already written.
     The routines you'll need to write for the assignment are below.
@@ -391,7 +393,7 @@ Detect Harris corners.
     numInterestsPts - number of interest points returned
     imageDisplay - image returned to display (for debugging)
 *******************************************************************************/
-void MainWindow::HarrisCornerDetector(QImage image, double sigma, double thres, CIntPt **interestPts, int &numInterestsPts, QImage &imageDisplay)
+void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian parameter*/, double thres/*threshold*/, CIntPt **interestPts, int &numInterestsPts, QImage &imageDisplay)
 {
     int r, c;
     int width = image.width();
@@ -400,8 +402,11 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma, double thres, 
     QRgb pixel;
 
     numInterestsPts = 0;
-    // itorators
-    int x,y;
+    // Iterators
+    int x,y, index;
+    // Temporary variables
+
+
     // Compute the corner response using just the green channel
     for(r=0;r<height;r++)
        for(c=0;c<width;c++)
@@ -415,17 +420,38 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma, double thres, 
     // Step 1: Compute the x and y derivatives for the image
     double *iDx = new double[height*width];
     double *iDy = new double[height*width];
+
     for (y = 0; y < height; y++)
     {
         for (int x = 0; x < width; x++)
         {
-            iDx[y*width+x]=buffer[y*width+x];
-            iDy[y*width+x]=buffer[y*width+x];
+            index=y*width+x;
+            iDx[index]=buffer[index], iDy[index]=buffer[index];
         }
     }
     double kernel[] = { -1, 0, 1 };
     convolve(iDx, height, width, kernel, 1, 3);
     convolve(iDy, height, width, kernel, 3, 1);
+
+    // Step 2: Compute the coefficient matrix A
+    double *dxx= new double[height*width];
+    double *dyy= new double[height*width];
+    double *dxx= new double[height*width];
+     for (y= 0; y<height; y++)
+     {
+         for (x= 0; x<width; x++)
+         {
+             index= y*width+x;
+             dx= iDx[index], dy= iDy[index];
+             dxx[indx]= dx*dx, dyy[index]= dy*dy, dxy[index]= dx*dy;
+         }
+     }
+
+     /* Apply the weight kernel*/
+     SeparableGaussianBlurImage(dxx, width, height, sigma);
+     SeparableGaussianBlurImage(dyy, width, height, sigma);
+     SeparableGaussianBlurImage(dxy, width, height, sigma);
+
 
     // Store the number of interest points in variable numInterestsPts,
     // allocate an array as follows:
