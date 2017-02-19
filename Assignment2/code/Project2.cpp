@@ -394,23 +394,38 @@ Detect Harris corners.
 void MainWindow::HarrisCornerDetector(QImage image, double sigma, double thres, CIntPt **interestPts, int &numInterestsPts, QImage &imageDisplay)
 {
     int r, c;
-    int w = image.width();
-    int h = image.height();
-    double *buffer = new double [w*h];
+    int width = image.width();
+    int height = image.height();
+    double *buffer = new double [width*height];
     QRgb pixel;
 
     numInterestsPts = 0;
-
+    // itorators
+    int x,y;
     // Compute the corner response using just the green channel
-    for(r=0;r<h;r++)
-       for(c=0;c<w;c++)
+    for(r=0;r<height;r++)
+       for(c=0;c<width;c++)
         {
             pixel = image.pixel(c, r);
 
-            buffer[r*w + c] = (double) qGreen(pixel);
+            buffer[r*width + c] = (double) qGreen(pixel);
         }
 
-    // Write your Harris corner detection code here.
+    // Harris corner detection code
+    // Step 1: Compute the x and y derivatives for the image
+    double *iDx = new double[height*width];
+    double *iDy = new double[height*width];
+    for (y = 0; y < height; y++)
+    {
+        for (int x = 0; x < width; x++)
+        {
+            iDx[y*width+x]=buffer[y*width+x];
+            iDy[y*width+x]=buffer[y*width+x];
+        }
+    }
+    double kernel[] = { -1, 0, 1 };
+    convolve(iDx, height, width, kernel, 1, 3);
+    convolve(iDy, height, width, kernel, 3, 1);
 
     // Store the number of interest points in variable numInterestsPts,
     // allocate an array as follows:
