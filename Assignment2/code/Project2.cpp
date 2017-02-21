@@ -406,7 +406,6 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
     int x,y, index;
     // Temporary variables
 
-
     // Compute the corner response using just the green channel
     for(r=0;r<height;r++)
        for(c=0;c<width;c++)
@@ -436,14 +435,15 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
     // Step 2: Compute the coefficient matrix A
     double *dxx= new double[height*width];
     double *dyy= new double[height*width];
-    double *dxx= new double[height*width];
+    double *dxy= new double[height*width];
      for (y= 0; y<height; y++)
      {
          for (x= 0; x<width; x++)
          {
+             double dx=0., dy=0.;
              index= y*width+x;
              dx= iDx[index], dy= iDy[index];
-             dxx[indx]= dx*dx, dyy[index]= dy*dy, dxy[index]= dx*dy;
+             dxx[index]= dx*dx, dyy[index]= dy*dy, dxy[index]= dx*dy;
          }
      }
 
@@ -451,6 +451,21 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
      SeparableGaussianBlurImage(dxx, width, height, sigma);
      SeparableGaussianBlurImage(dyy, width, height, sigma);
      SeparableGaussianBlurImage(dxy, width, height, sigma);
+
+     /*Compute the harmonic mean*/
+     double *harmonicMean = new double[height*width];
+     for (y= 0; y<height; y++)
+     {
+         for (x= 0; x<width; x++)
+         {
+             index= y*width+x;
+             // Harris response: R = determinant(H) / trace(H)
+             harmonicMean[index]= (dxx[index]*dyy[index]-dxy[index]*dxy[index])/
+                                  (dxx[index]+dyy[index]);
+
+         }
+     }
+
 
 
     // Store the number of interest points in variable numInterestsPts,
