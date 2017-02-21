@@ -1,0 +1,1 @@
+1. Harris: why adding weight is to apply a weighting kernel
