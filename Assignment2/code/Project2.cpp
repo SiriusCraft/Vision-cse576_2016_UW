@@ -393,7 +393,7 @@ Detect Harris corners.
     numInterestsPts - number of interest points returned
     imageDisplay - image returned to display (for debugging)
 *******************************************************************************/
-void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian parameter*/, double thres/*threshold*/, CIntPt **interestPts, int &numInterestsPts, QImage &imageDisplay)
+void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian parameter*/, double thres/*threshold*/, CIntPt **interestPts, int &numInterestsPts/*number of interested pointed required*/, QImage &imageDisplay)
 {
     int r, c;
     int width = image.width();
@@ -403,9 +403,10 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
 
     numInterestsPts = 0;
     // Iterators
-    int x,y, index;
+    int x, y, i, j, x1, y1;
     // Temporary variables
-
+    int index;
+    bool isPeak=false;
     // Compute the corner response using just the green channel
     for(r=0;r<height;r++)
        for(c=0;c<width;c++)
@@ -415,20 +416,20 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
             buffer[r*width + c] = (double) qGreen(pixel);
         }
 
-    // Harris corner detection code
+    // Harris Detector Code
     // Step 1: Compute the x and y derivatives for the image
     double *iDx = new double[height*width];
     double *iDy = new double[height*width];
 
-    for (y = 0; y < height; y++)
+    for (y= 0; y<height; y++)
     {
-        for (int x = 0; x < width; x++)
+        for (int x= 0; x<width; x++)
         {
-            index=y*width+x;
+            index= y*width+x;
             iDx[index]=buffer[index], iDy[index]=buffer[index];
         }
     }
-    double kernel[] = { -1, 0, 1 };
+    double kernel[3] = {-1, 0, 1};
     convolve(iDx, height, width, kernel, 1, 3);
     convolve(iDy, height, width, kernel, 3, 1);
 
@@ -440,30 +441,106 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
      {
          for (x= 0; x<width; x++)
          {
-             double dx=0., dy=0.;
+             double dx= 0., dy= 0.;
              index= y*width+x;
              dx= iDx[index], dy= iDy[index];
              dxx[index]= dx*dx, dyy[index]= dy*dy, dxy[index]= dx*dy;
          }
      }
 
-     /* Apply the weight kernel*/
+     /* Apply the weight kernel */
      SeparableGaussianBlurImage(dxx, width, height, sigma);
      SeparableGaussianBlurImage(dyy, width, height, sigma);
      SeparableGaussianBlurImage(dxy, width, height, sigma);
 
-     /*Compute the harmonic mean*/
+     /* Compute the harmonic mean */
      double *harmonicMean = new double[height*width];
      for (y= 0; y<height; y++)
      {
          for (x= 0; x<width; x++)
          {
              index= y*width+x;
-             // Harris response: R = determinant(H) / trace(H)
+
              harmonicMean[index]= (dxx[index]*dyy[index]-dxy[index]*dxy[index])/
                                   (dxx[index]+dyy[index]);
 
          }
+     }
+
+     // Find the peaks in the harmonic mean array
+     int numInterestsPtsTemp = 0;
+     for (y= 0; y < height; y++)
+     {
+         for (x= 0; x < width; x++)
+         {
+             // First, check if we need to expand our temp interest point array
+             /*if (numInterestsPts == numInterestsPtsTemp)
+             {
+                 int newSize = numInterestsPtsTemp + 10;
+                 CIntPt *temp = new CIntPt[newSize];
+                 if (numInterestsPts > 0)
+                 {
+                     for (i = 0; i < numInterestsPtsTemp; i++)
+                     {
+                         temp[i].m_X = (*interestPts)[i].m_X;
+                         temp[i].m_Y = (*interestPts)[i].m_Y;
+                     }
+                     delete[] (*interestPts);
+                 }
+                 *interestPts = temp;
+                 numInterestsPtsTemp = newSize;
+             }*/
+
+
+             isPeak= harmonicMean[y*width+x]>thres/*threshold*/; // Flag to justify the peak status
+             /* Harmonic mean array is of size height*width */
+             /* if isPeak is true, compare the focus point with neighbouring pixels */
+             if (isPeak)
+             {
+                for (j= -1; j<=1 && isPeak; j=+2)
+                {
+                    for (i= -1; i<=1 && isPeak; i++)
+                    {
+                        y1= y+j, x1= x+i;
+                        if (0<=y1 && y1<height && 0<=x1 && x1<width) // If the pixel is range
+                            if (harmonicMean[y*width+x]<harmonicMean[y1*width+x1]) // If focus point is not local maximum
+                                isPeak= false;
+                    }
+                }
+                if (isPeak)
+                {
+                    for (i= -1; i<=1 && isPeak; i=+2)
+                    {
+                        y1= y+1, x1= x+i;
+                        if (0<=y1 && y1<height && 0<=x1 && x1<width) // If the pixel is range
+                            if (harmonicMean[y*width+x]<harmonicMean[y1*width+x1]) // If focus point is not local maximum
+                                isPeak= false;
+                    }
+                }
+             }
+
+             // If we're a peak, add to our interest point array!
+             if (isPeak)
+             {
+                 (*interestPts)[numInterestsPts].m_X = x;
+                 (*interestPts)[numInterestsPts].m_Y = y;
+                 numInterestsPts++;
+             }
+         }
+     }
+
+     // Now that we've found all the interest points we're going to find, shrink
+     // the array of interest points if needed
+     if (numInterestsPts != numInterestsPtsTemp)
+     {
+         CIntPt *temp = new CIntPt[numInterestsPts];
+         for (int i = 0; i < numInterestsPts; i++)
+         {
+             temp[i].m_X = (*interestPts)[i].m_X;
+             temp[i].m_Y = (*interestPts)[i].m_Y;
+         }
+         delete[] (*interestPts);
+         *interestPts = temp;
      }
 
 
