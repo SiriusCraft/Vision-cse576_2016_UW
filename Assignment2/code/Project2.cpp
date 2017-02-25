@@ -409,7 +409,7 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
     int height = image.height();
     double *buffer = new double [width*height];
     QRgb pixel;
-    numInterestsPts = 0; //
+    numInterestsPts = 0; // Initialize to zero
     
     // Iterators
     int x, y, i, j, x1, y1;
@@ -536,6 +536,7 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
         delete[] (*interestPts);
         *interestPts= tmpInterestPts;
     }
+    DrawInterestPoints(*interestPts, numInterestsPts, imageDisplay);
 }
 
 
@@ -795,6 +796,7 @@ Bilinearly interpolate image (helper function for Stitch)
 
     You can just copy code from previous assignment.
 *******************************************************************************/
+
 bool MainWindow::BilinearInterpolation(QImage *image, double x, double y, double rgb[3])
 {
     int height = image->height();
@@ -826,7 +828,41 @@ bool MainWindow::BilinearInterpolation(QImage *image, double x, double y, double
     // What is this for?
     return true;
 }
+/*
+bool MainWindow::BilinearInterpolation(QImage *image, double x, double y, double rgb[3])
+{
+/*
+    int height = image->height();
+    int width = image->width();
+    int x1 = static_cast<int>(floor(x));
+    int y1 = static_cast<int>(floor(y));
+    int x2 = static_cast<int>(ceil(x+0.00001));
+    int y2 = static_cast<int>(ceil(y+0.00001));
 
+    QRgb pixel11 = ((0 <= x1 && x1 < width && 0 <= y1 && y1 < height) ?
+                        image->pixel(x1, y1) : qRgb(0, 0, 0));
+    QRgb pixel12 = ((0 <= x1 && x1 < width && 0 <= y2 && y2 < height) ?
+                        image->pixel(x1, y2) : qRgb(0, 0, 0));
+    QRgb pixel21 = ((0 <= x2 && x2 < width && 0 <= y1 && y1 < height) ?
+                        image->pixel(x2, y1) : qRgb(0, 0, 0));
+    QRgb pixel22 = ((0 <= x2 && x2 < width && 0 <= y2 && y2 < height) ?
+                        image->pixel(x2, y2) : qRgb(0, 0, 0));
+
+    for (int i = 0; i < 3; i++)
+    {
+        int (*colorfn)(QRgb) = (i == 0 ? qRed : (i == 1 ? qGreen : qBlue));
+        rgb[i] = (1 / ((x2-x1)*(y2-y1))) *
+                (((*colorfn)(pixel11)*(x2-x)*(y2-y)) +
+                 ((*colorfn)(pixel21)*(x-x1)*(y2-y)) +
+                 ((*colorfn)(pixel12)*(x2-x)*(y-y1)) +
+                 ((*colorfn)(pixel22)*(x-x1)*(y-y1)));
+    }
+
+
+    // What is this for?
+    return true;
+}
+*/
 
 /*******************************************************************************
 Stitch together two images using the homography transformation
@@ -836,6 +872,7 @@ Stitch together two images using the homography transformation
     homInv - inverse homography transformation (image2 -> image1)
     stitchedImage - returned stitched image
 *******************************************************************************/
+
 void MainWindow::Stitch(QImage image1, QImage image2, double hom[3][3], double homInv[3][3], QImage &stitchedImage)
 {
     // Width and height of stitchedImage
