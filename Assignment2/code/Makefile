@@ -233,7 +233,8 @@ DIST          = /usr/local/Cellar/qt5/5.8.0_1/mkspecs/features/spec_pre.prf \
 		/usr/local/Cellar/qt5/5.8.0_1/mkspecs/features/yacc.prf \
 		/usr/local/Cellar/qt5/5.8.0_1/mkspecs/features/lex.prf \
 		mac.pro mainwindow.h \
-		Matrix.h main.cpp \
+		Matrix.h \
+		ui_mainwindow.h main.cpp \
 		mainwindow.cpp \
 		Matrix.cpp \
 		Project2.cpp
@@ -638,7 +639,7 @@ distdir: FORCE
 	@test -d $(DISTDIR) || mkdir -p $(DISTDIR)
 	$(COPY_FILE) --parents $(DIST) $(DISTDIR)/
 	$(COPY_FILE) --parents /usr/local/Cellar/qt5/5.8.0_1/mkspecs/features/data/dummy.cpp $(DISTDIR)/
-	$(COPY_FILE) --parents mainwindow.h Matrix.h $(DISTDIR)/
+	$(COPY_FILE) --parents mainwindow.h Matrix.h ui_mainwindow.h $(DISTDIR)/
 	$(COPY_FILE) --parents main.cpp mainwindow.cpp Matrix.cpp Project2.cpp $(DISTDIR)/
 	$(COPY_FILE) --parents mainwindow.ui $(DISTDIR)/
 
