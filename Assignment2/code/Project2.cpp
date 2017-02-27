@@ -152,6 +152,7 @@ Compute interest point descriptors
     I've implemented a very simple 8 dimensional descriptor.  Feel free to
     improve upon this.
 *******************************************************************************/
+// Difference Descriptor: the difference between the surrounding points and the center
 void MainWindow::ComputeDescriptors(QImage image, CIntPt *interestPts, int numInterestsPts)
 {
     int r, c, cd, rd, i, j;
@@ -548,17 +549,68 @@ Find matching interest points between images.
 *******************************************************************************/
 void MainWindow::MatchInterestPoints(QImage image1, CIntPt *interestPts1, int numInterestsPts1,
                              QImage image2, CIntPt *interestPts2, int numInterestsPts2,
-                             CMatches **matches, int &numMatches, QImage &image1Display, QImage &image2Display)
+                             CMatches **matches, int &numMatches, QImage &image1Display,
+                             QImage &image2Display)
 {
     numMatches = 0;
-
+    // Temporary variables
+    int it1, it2; // Interators
+    double dist, optDist; // Distances
     // Compute the descriptors for each interest point.
     // You can access the descriptor for each interest point using interestPts1[i].m_Desc[j].
     // If interestPts1[i].m_DescSize = 0, it was not able to compute a descriptor for that point
     ComputeDescriptors(image1, interestPts1, numInterestsPts1);
     ComputeDescriptors(image2, interestPts2, numInterestsPts2);
 
-    // Add your code here for finding the best matches for each point.
+    // Find the best matches for each point.
+    int numMatchesTemp = 0;
+    for (it1 = 0; it1<numInterestsPts1; it1++)
+    {
+        if (0==interestPts1[it1].m_DescSize) // 0==m_DescSize means the point does not have a descriptor
+            continue;
+        /*
+        if (numMatches == numMatchesTemp)
+        {
+            int newSize = numMatchesTemp + 10;
+            CMatches *temp = new CMatches[newSize];
+            if (numMatches > 0)
+            {
+                for (int i = 0; i < numMatchesTemp; i++)
+                {
+                    temp[i] = (*matches)[i];
+                }
+                delete[] (*matches);
+            }
+            *matches = temp;
+            numMatchesTemp = newSize;
+        }
+        */
+
+        int closePt2= -1;
+        optDist= 0;
+
+        for (it2 = 0; it2<numInterestsPts2; it2++)
+        {
+            if (interestPts2[it2].m_DescSize == 0)
+                continue;
+
+            dist= 0;
+            for (int d = 0; d < DESC_SIZE; d++)
+               dist+= abs(interestPts1[it1].m_Desc[d]-interestPts2[it2].m_Desc[d]);
+            if (-1==closePt2 || dist<optDistance)
+               closePt2= it2, optDist = dist;
+        }
+
+        if (closePt2!= -1)
+        {
+            (*matches)[numMatches].m_X1= interestPts1[it1].m_X;
+            (*matches)[numMatches].m_Y1= interestPts1[it1].m_Y;
+            (*matches)[numMatches].m_X2= interestPts2[closePt2].m_X;
+            (*matches)[numMatches].m_Y2= interestPts2[closePt2].m_Y;
+            numMatches++;
+        }
+    }
+
 
     // Once you uknow the number of matches allocate an array as follows:
     // *matches = new CMatches [numMatches];
