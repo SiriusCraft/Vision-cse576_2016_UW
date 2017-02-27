@@ -164,7 +164,7 @@ void MainWindow::ComputeDescriptors(QImage image, CIntPt *interestPts, int numIn
     double sigma = 2.0;
     int rad = 4;
 
-    // Computer descriptors from green channel
+    // Compute descriptors from green channel
     for(r=0;r<h;r++)
        for(c=0;c<w;c++)
         {
@@ -182,7 +182,7 @@ void MainWindow::ComputeDescriptors(QImage image, CIntPt *interestPts, int numIn
         int c = (int) interestPts[i].m_X;
         int r = (int) interestPts[i].m_Y;
 
-        if(c >= rad && c < w - rad && r >= rad && r < h - rad)
+        if(c >= rad && c < w - rad && r >= rad && r < h - rad) // if the described points fall all inside the image
         {
             double centerValue = buffer[(r)*w + c];
             int j = 0;
