@@ -191,8 +191,8 @@ void MainWindow::ComputeDescriptors(QImage image, CIntPt *interestPts, int numIn
                 for(cd=-1;cd<=1;cd++)
                     if(rd != 0 || cd != 0)
                 {
-                    interestPts[i].m_Desc[j] = buffer[(r + rd*rad)*w + c + cd*rad] - centerValue;
-                    j++;
+                    interestPts[i].m_Desc[j] = buffer[(r + rd*rad)*w + c + cd*rad/*[r+rd*rad, c+cd*rad]*/] - centerValue;
+                    j++; // j goes from 0 to 7
                 }
 
             interestPts[i].m_DescSize = DESC_SIZE;

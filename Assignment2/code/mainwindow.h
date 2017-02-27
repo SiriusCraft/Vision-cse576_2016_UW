@@ -18,7 +18,7 @@ class CIntPt // the class for interest points
 public:
     double m_X;  // X position of interest point
     double m_Y;  // Y position of interest point
-    double m_Desc[DESC_SIZE]; // The interest points descriptor
+    double m_Desc[DESC_SIZE]; // The interest points descriptor: a vector like SIFT vector
     int m_DescSize; // The size of the desciptor
 
 };
