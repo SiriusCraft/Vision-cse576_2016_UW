@@ -110,12 +110,25 @@ void convolve(double *image, int height, int width, double *kernel, int kernelHe
     }
     return;
 }
+//Copy functions
 
+//Copy 1: overloaded copy between two list of CIntPt
 void copy(CIntPt *source, int lenSource, CIntPt *dest, int lenDest)
 {
     int i= 0;
-    for (i= 0; i<lenSource; i++)
+    for (i= 0; i<lenSource && i<lenDest; i++)
     dest[i].m_X= source[i].m_X, dest[i].m_Y= source[i].m_Y;
+    return;
+}
+
+void copy(CMatches *source, int lenSource, CMatches *dest, int lenDest)
+{
+    int i= 0;
+    for (i= 0; i<lenSource && i<lenDest; i++)
+    {
+        dest[i].m_X1= source[i].m_X1, dest[i].m_Y1= source[i].m_Y1;
+        dest[i].m_X2= source[i].m_X2, dest[i].m_Y2= source[i].m_Y2;
+    }
     return;
 }
 
@@ -410,13 +423,13 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
     // Temporary variables
     int index, bufferCount=50, newBufferCount=0;
     bool isPeak=false;
-    CIntPt *tmpInterestPts= new CIntPt[bufferCount];
+    CIntPt *tmpInterestPts;
+    *interestPts= new CIntPt[bufferCount];
     // Compute the corner response using just the green channel
     for(r=0;r<height;r++)
        for(c=0;c<width;c++)
         {
             pixel = image.pixel(c, r);
-
             buffer[r*width + c] = (double) qGreen(pixel);
         }
 
@@ -464,7 +477,6 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
         for (x= 0; x<width; x++)
         {
             index= y*width+x;
-
             harmonicMean[index]= (dxx[index]*dyy[index]-dxy[index]*dxy[index])/
                                  (dxx[index]+dyy[index]);
         }
@@ -479,8 +491,8 @@ void MainWindow::HarrisCornerDetector(QImage image, double sigma/*Gaussian param
             {
                 newBufferCount= bufferCount+50;
                 tmpInterestPts= new CIntPt[newBufferCount];
-                copy(*interestPts, bufferCount, tmpInterestPts, newBufferCount), delete[] *interestPts;
-        *interestPts= tmpInterestPts, bufferCount= newBufferCount;
+                copy(*interestPts, bufferCount, tmpInterestPts, newBufferCount);
+                delete[] *interestPts, *interestPts= tmpInterestPts;
                 bufferCount= newBufferCount;
             }
 
@@ -556,6 +568,9 @@ void MainWindow::MatchInterestPoints(QImage image1, CIntPt *interestPts1, int nu
     // Temporary variables
     int it1, it2; // Interators
     double dist, optDist; // Distances
+    int bufferCount= 50, newBufferCount= 0;
+    CMatches *tmpMatches;
+    *matches= new CMatches[bufferCount];
     // Compute the descriptors for each interest point.
     // You can access the descriptor for each interest point using interestPts1[i].m_Desc[j].
     // If interestPts1[i].m_DescSize = 0, it was not able to compute a descriptor for that point
@@ -568,23 +583,14 @@ void MainWindow::MatchInterestPoints(QImage image1, CIntPt *interestPts1, int nu
     {
         if (0==interestPts1[it1].m_DescSize) // 0==m_DescSize means the point does not have a descriptor
             continue;
-        /*
-        if (numMatches == numMatchesTemp)
+        if (numMatches==bufferCount)
         {
-            int newSize = numMatchesTemp + 10;
-            CMatches *temp = new CMatches[newSize];
-            if (numMatches > 0)
-            {
-                for (int i = 0; i < numMatchesTemp; i++)
-                {
-                    temp[i] = (*matches)[i];
-                }
-                delete[] (*matches);
-            }
-            *matches = temp;
-            numMatchesTemp = newSize;
+            newBufferCount= bufferCount+50;
+            tmpMatches = new CMatches[newBufferCount];
+            copy(*matches, bufferCount, tmpMatches, newBufferCount);
+            delete[] *matches, *matches= tmpMatches;
+            bufferCount= newBufferCount;
         }
-        */
 
         int closePt2= -1;
         optDist= 0;
@@ -597,7 +603,7 @@ void MainWindow::MatchInterestPoints(QImage image1, CIntPt *interestPts1, int nu
             dist= 0;
             for (int d = 0; d < DESC_SIZE; d++)
                dist+= abs(interestPts1[it1].m_Desc[d]-interestPts2[it2].m_Desc[d]);
-            if (-1==closePt2 || dist<optDistance)
+            if (-1==closePt2 || dist<optDist)
                closePt2= it2, optDist = dist;
         }
 
@@ -611,12 +617,13 @@ void MainWindow::MatchInterestPoints(QImage image1, CIntPt *interestPts1, int nu
         }
     }
 
-
-    // Once you uknow the number of matches allocate an array as follows:
-    // *matches = new CMatches [numMatches];
-    //
-    // The position of the interest point in image 1 is (m_X1, m_Y1)
-    // The position of the interest point in image 2 is (m_X2, m_Y2)
+    // Truncate empty buffer entries
+    if (numMatches<bufferCount)
+    {
+        tmpMatches = new CMatches[numMatches];
+        copy(*matches, numMatches, tmpMatches, numMatches);
+        delete[] *matches, *matches= tmpMatches;
+    }
 
     // Draw the matches
     DrawMatches(*matches, numMatches, image1Display, image2Display);
