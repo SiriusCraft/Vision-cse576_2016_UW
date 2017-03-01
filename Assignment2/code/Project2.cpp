@@ -637,8 +637,11 @@ Project a point (x1, y1) using the homography transformation h
 *******************************************************************************/
 void MainWindow::Project(double x1, double y1, double &x2, double &y2, double h[3][3])
 {
-    // Project point (x1, y1) using the homography h; store the result in (x2, y2).
-    // Add your code here.
+    double denom= h[2][0]*x1+h[2][1]*y1+h[2][2];
+    x2= (h[0][0]*x1+h[0][1]*y1+h[0][2])/denom;
+    y2= (h[1][0]*x1+h[1][1]*y1+h[1][2])/denom;
+
+    return;
 }
 
 /*******************************************************************************
@@ -649,11 +652,22 @@ Count the number of inliers given a homography.  This is a helper function for R
     inlierThreshold - maximum distance between points that are considered to be inliers
     Returns the total number of inliers.
 *******************************************************************************/
-int MainWindow::ComputeInlierCount(double h[3][3], CMatches *matches, int numMatches, double inlierThreshold)
+int MainWindow::ComputeInlierCount(double h[3][3]/*homography matrix*/, CMatches *matches, int numMatches, double inlierThreshold)
 {
-    // Add your code here.
+    int numInlier= 0;
+    //Temporary variables
+    int i= 0; // iterator
+    double estimateX, estimateY, error= 0.0;
 
-    return 0;
+    for (i= 0; i<numMatches; i++)
+    {
+        Project(matches[i].m_X1, matches[i].m_Y1, estimateX, estimateY, h); // Projection helper
+
+        error= sqrt((matches[i].m_X2-estimateX, 2)+pow(matches[i].m_Y2-estimateY, 2));
+        numInlier+= (error<inlierThreshold)? 1 : 0;
+    }
+
+    return numInlier;
 }
 
 
@@ -668,13 +682,63 @@ Compute homography transformation between images using RANSAC.
     image1Display - image used to display matches
     image2Display - image used to display matches
 *******************************************************************************/
-void MainWindow::RANSAC(CMatches *matches, int numMatches, int numIterations, double inlierThreshold,
+void MainWindow::RANSAC(CMatches *matches, int numMatches, int numIterations/*Number of iterations*/, double inlierThreshold,
                         double hom[3][3], double homInv[3][3], QImage &image1Display, QImage &image2Display)
 {
-    // Add your code here.
 
-    // After you're done computing the inliers, display the corresponding matches.
-    // DrawMatches(inliers, numInliers, image1Display, image2Display);
+    // Temporary variables
+    const int numSelected= 4;
+    int it= 0, i, j, rd= 0, idx= 0, numInlier= 0, maxNumInlier= 0;
+    bool isRep;
+    int index[numSelected];
+    CMatches selectedMatches[numSelected];
+    double h[3][3];
+    double bestHom[3][3];
+
+    std::srand(std::time(0)); // use current time as seed for random generator
+
+    for (it= 0; it<numIterations; it++)
+    {
+
+        // Step 1: randomly select four points
+        /* initialization */
+        for (i=0; i<numSelected; i++)
+            index[i]=-1;
+        i= 0;
+        while (i<numSelected)
+        {
+            rd = std::rand();
+            idx= static_cast<int>(floor(
+                        static_cast<double>(numMatches)*static_cast<double>(rd)/RAND_MAX));
+            isRep= false;
+            for (j= 0; j<numSelected && !isRep; j++)
+                if (index[j]==idx)
+                    isRep= true;
+            if (!isRep)
+            {
+                index[i]= idx;
+                i++;
+            }
+        }
+        /* selectedMatches is the selected matches list*/
+        for(i= 0; i<numSelected; i++)
+            selectedMatches[i]= matches[index[i]];
+
+        // Step 2: Compute exact homography
+        ComputeHomography(selectedMatches, numSelected, h, true);
+
+        // Step 3
+        numInlier = ComputeInlierCount(homComputed, matches, numMatches, inlierThreshold);
+
+        if (numInlier<maxNumInlier)
+        {
+            for (i= 0; i<3; i++)
+                for (j= 0; j<3; j++)
+                    bestHom[i][j]= h[i][j];
+            numInlier= maxNumInlier;
+        }
+    }
+
 
 }
 
