@@ -5,7 +5,7 @@
 #include "Matrix.h"
 
 #include <QDebug>//DEBUG
-
+#include <assert.h>
 #pragma clang diagnostic ignored "-Wunused-parameter"
 
 /*******************************************************************************
@@ -694,6 +694,7 @@ void MainWindow::RANSAC(CMatches *matches, int numMatches, int numIterations/*Nu
     CMatches selectedMatches[numSelected];
     double h[3][3];
     double bestHom[3][3];
+    double x2, y2, error;
 
     std::srand(std::time(0)); // use current time as seed for random generator
 
@@ -728,7 +729,7 @@ void MainWindow::RANSAC(CMatches *matches, int numMatches, int numIterations/*Nu
         ComputeHomography(selectedMatches, numSelected, h, true);
 
         // Step 3
-        numInlier = ComputeInlierCount(homComputed, matches, numMatches, inlierThreshold);
+        numInlier= ComputeInlierCount(h, matches, numMatches, inlierThreshold);
 
         if (numInlier<maxNumInlier)
         {
@@ -739,7 +740,32 @@ void MainWindow::RANSAC(CMatches *matches, int numMatches, int numIterations/*Nu
         }
     }
 
+    /*  Given the highest scoring homography, once again find all the inliers. */
+    idx= 0;
+    CMatches *inlier= new CMatches[maxNumInlier];
+    for (i = 0; i<numMatches; i++)
+    {
+        x2= 0, y2= 0;
+        Project(matches[i].m_X1, matches[i].m_Y1, x2, y2, bestHom);
+        error= sqrt(pow(matches[i].m_X2-x2, 2) + pow(matches[i].m_Y2-y2, 2));
+        if (error<inlierThreshold) // If the match is an inlier match
+        {
+            inlier[idx]= matches[i];
+            idx++;
+        }
+    }
+    assert (idx==maxNumInlier);
+    qDebug()<<"idxInlier and maxNumInlier should match!\n";
 
+    /* Compute a new refined homography using all of the inliers  */
+    ComputeHomography(inlier, numInlier, hom, true);
+
+    /* Compute an inverse homography as well */
+    ComputeHomography(inlier, numInlier, homInv, false);
+
+    DrawMatches(inlier, maxNumInlier, image1Display, image2Display);
+
+    delete[] inlier;
 }
 
 /*******************************************************************************
@@ -751,9 +777,33 @@ Bilinearly interpolate image (helper function for Stitch)
 *******************************************************************************/
 bool MainWindow::BilinearInterpolation(QImage *image, double x, double y, double rgb[3])
 {
-    // Add your code here.
+    int height= image->height();
+    int width= image->width();
+    int x1= static_cast<int>(floor(x)), y1= static_cast<int>(floor(y)),
+        x2= static_cast<int>(ceil(x+0.00001)), y2= static_cast<int>(ceil(y+0.00001));// Keeping x1 and x2 not equal, y1 and y2 not equal
+    double a= x-x1, b= y-y1;
+    QRgb pixel11 = ((0<=x1&&x1<width&&0<=y1&&y1<height)?image->pixel(x1, y1):qRgb(0, 0, 0));//Keeping pixel in range
+    QRgb pixel12 = ((0<=x1&&x1<width&&0<=y2&&y2<height)?image->pixel(x1, y2):qRgb(0, 0, 0));
+    QRgb pixel21 = ((0<=x2&&x2<width&&0<=y1&&y1<height)?image->pixel(x2, y1):qRgb(0, 0, 0));
+    QRgb pixel22 = ((0<=x2&&x2<width&&0<=y2&&y2<height)?image->pixel(x2, y2):qRgb(0, 0, 0));
 
-    return true;
+    rgb[0] = (1-a)*(1-b)*qRed(pixel11)+
+             a*(1-b)*(qRed(pixel21)+
+             (1-a)*b*qRed(pixel12)+
+             a*b*qRed(pixel22)
+             );
+    rgb[1] = (1-a)*(1-b)*qGreen(pixel11)+
+             a*(1-b)*(qGreen(pixel21)+
+             (1-a)*b*qGreen(pixel12)+
+             a*b*qGreen(pixel22)
+             );
+    rgb[2] = (1-a)*(1-b)*qBlue(pixel11)+
+             a*(1-b)*(qBlue(pixel21)+
+             (1-a)*b*qBlue(pixel12)+
+             a*b*qBlue(pixel22)
+             );
+
+    return true; // Why returning true here
 }
 
 
