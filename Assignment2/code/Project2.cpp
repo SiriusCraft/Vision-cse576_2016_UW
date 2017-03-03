@@ -818,13 +818,23 @@ Stitch together two images using the homography transformation
 void MainWindow::Stitch(QImage image1, QImage image2, double hom[3][3], double homInv[3][3], QImage &stitchedImage)
 {
     // Width and height of stitchedImage
-    int ws = 0;
-    int hs = 0;
+    int ws = 0, hs = 0;
+    int width1= image1.width(), height1=image1.height();
+    int width2= image1.width(), height2=image2.height();
+    double x11=0., y11=0.,
+           xh1=0., yh1=0.,
+           x1w=0., y1w=0.,
+           xhw=0., yhw=0.;// These are positions in image 1
 
-    // Add your code to compute ws and hs here.
+    /* To do this project the four corners of "image2" onto "image1" using Project and "homInv". Allocate the image. */
+    Project(0, 0, x11, y11, homInv);
+    Project(0, width2-1, x1w, y1w, homInv);
+    Project(height2-1, 0, xh1, yh1, homInv);
+    Project(height2-1, width2-1 , xhw, yhw, homInv);
 
     stitchedImage = QImage(ws, hs, QImage::Format_RGB32);
     stitchedImage.fill(qRgb(0,0,0));
 
     // Add you code to warp image1 and image2 to stitchedImage here.
+
 }
