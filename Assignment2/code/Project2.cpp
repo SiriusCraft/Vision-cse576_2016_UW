@@ -818,23 +818,51 @@ Stitch together two images using the homography transformation
 void MainWindow::Stitch(QImage image1, QImage image2, double hom[3][3], double homInv[3][3], QImage &stitchedImage)
 {
     // Width and height of stitchedImage
-    int ws = 0, hs = 0;
+    int ws = 0, hs = 0, leftBound, rightBound, upperBound, lowerBound, xDiff, yDiff;
+    int x, y;
     int width1= image1.width(), height1=image1.height();
     int width2= image1.width(), height2=image2.height();
     double x11=0., y11=0.,
            xh1=0., yh1=0.,
            x1w=0., y1w=0.,
            xhw=0., yhw=0.;// These are positions in image 1
-
+    double x2, y2;
+    double rgb[3]; // Interpolation pixel vaule : they are double
     /* To do this project the four corners of "image2" onto "image1" using Project and "homInv". Allocate the image. */
     Project(0, 0, x11, y11, homInv);
     Project(0, width2-1, x1w, y1w, homInv);
     Project(height2-1, 0, xh1, yh1, homInv);
     Project(height2-1, width2-1 , xhw, yhw, homInv);
+    /* The result of the stitching is a rectangle while the valid image may not be a rectangle*/
+    leftBound = floor(          min(0.0, min(x11, min(x1w, min(xh1, xhw))))), xDiff= -leftBound;
+    rightBound= ceil(max(static_cast<double>(width1), max(x11, max(x1w, max(xh1, xhw)))));
+    upperBound= floor(          min(0.0, min(y11, min(y1w, min(yh1, yhw))))), yDiff= -upperBound;
+    lowerBound= ceil(max(static_cast<double>(width1), max(y11, max(y1w, max(yh1, yhw)))));
+    ws= rightBound-leftBound +1;
+    hs= lowerBound-upperBound+1;
 
-    stitchedImage = QImage(ws, hs, QImage::Format_RGB32);
+    stitchedImage= QImage(ws, hs, QImage::Format_RGB32);
     stitchedImage.fill(qRgb(0,0,0));
+    /* Copy image1 into the stitchedImage */
+    for (y= 0; y<height1; y++)
+        for (x= 0; x<width1; x++)
+            stitchedImage.setPixel(x+xDiff, y+yDiff, image1.pixel(x,y));
 
-    // Add you code to warp image1 and image2 to stitchedImage here.
+    /* Mapping image2 into the stitchedImage */
+    for (y= 0; y<hs; y++)
+    {
+        for (x= 0; x<ws; x++)
+        {
+            Project(x-xDiff, y-yDiff, x2, y2, hom);
+
+            if ((0<=x2 && x2<width2) && (0<=y2 && y2<height2))
+            {
+                BilinearInterpolation(&image2, x2, y2, rgb);
+                stitchedImage.setPixel(x, y, normalize(static_cast<int>(rgb[0]),
+                                                       static_cast<int>(rgb[1]),
+                                                       static_cast<int>(rgb[2])));
+            }
+        }
+    }
 
 }
