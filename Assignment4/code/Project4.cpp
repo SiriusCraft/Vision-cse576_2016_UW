@@ -717,24 +717,24 @@ void MainWindow::DrawFace(QImage *displayImage, QMap<double, CDetection> *faceDe
         numTrainingExamples - Number of training examples
         patchSize - Size of training patches in one dimension (patches have patchSize*patchSize pixels)
 *******************************************************************************/
-void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData, int *trainingLabel, int numTrainingExamples, int patchSize)
+void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData, int *trainingLabel/* An binary array */, int numTrainingExamples, int patchSize)
 {
-    // Initialize our composite storage
     double *compositeFace = new double[patchSize*patchSize];
     double *compositeNonFace = new double[patchSize*patchSize];
-    for (int y = 0; y < patchSize; y++)
+    for (int y= 0; y< patchSize; y++)
     {
-        for (int x = 0; x < patchSize; x++)
+        for (int x= 0; x<patchSize; x++)
         {
-            compositeFace[y*patchSize+x] = compositeNonFace[y*patchSize+x] = 0;
+            compositeFace[y*patchSize+x]=0 ;
+            compositeNonFace[y*patchSize+x]= 0;
         }
     }
     // Loop through our training labels to determine how much of each we have
     int compositeFaceCount = 0;
     int compositeNonFaceCount = 0;
-    for (int i = 0; i < numTrainingExamples; i++)
+    for (int i = 0; i<numTrainingExamples; i++)
     {
-        if (trainingLabel[i] == 1)
+        if (trainingLabel[i]==1)
         {
             compositeFaceCount++;
         }
@@ -744,25 +744,28 @@ void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData, 
         }
     }
 
-    // Now, sum up all the patches
-    for (int y = 0; y < patchSize; y++)
+    for (int y= 0; y<patchSize; y++)
     {
-        for (int x = 0; x < patchSize; x++)
+        for (int x= 0; x<patchSize; x++)
         {
-            for (int i = 0; i < numTrainingExamples; i++)
+            for (int i= 0; i<numTrainingExamples; i++)
             {
                 double trainingValue = trainingData[i*patchSize*patchSize+y*patchSize+x];
-                if (trainingLabel[i] == 1)
+                if (trainingLabel[i]==1)
                 {
-                    compositeFace[y*patchSize+x] += trainingValue;
+                    compositeFace[y*patchSize+x]+= trainingValue;
                 }
                 else
                 {
-                    compositeNonFace[y*patchSize+x] += trainingValue;
+                    compositeNonFace[y*patchSize+x]+= trainingValue;
                 }
             }
         }
     }
+
+    // Debug
+
+
 
     // Resize displayImage
     QImage temp(patchSize*2, patchSize, displayImage->format());
