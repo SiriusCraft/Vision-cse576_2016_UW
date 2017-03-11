@@ -717,7 +717,8 @@ void MainWindow::DrawFace(QImage *displayImage, QMap<double, CDetection> *faceDe
         numTrainingExamples - Number of training examples
         patchSize - Size of training patches in one dimension (patches have patchSize*patchSize pixels)
 *******************************************************************************/
-void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData, int *trainingLabel/* An binary array */, int numTrainingExamples, int patchSize)
+void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData/* All pixels from randomly picked data set*/,
+                                    int *trainingLabel/* An binary array */, int numTrainingExamples, int patchSize)
 {
     double *compositeFace = new double[patchSize*patchSize];
     double *compositeNonFace = new double[patchSize*patchSize];
