@@ -4,6 +4,10 @@
 #include "ui_mainwindow.h"
 #include <QtGui>
 
+//Debug
+#include <QDebug>
+#include <cassert>
+#include <typeinfo>
 /*******************************************************************************
     The following are helper routines with code already written.
     The routines you'll need to write for the assignment are below.
@@ -18,6 +22,13 @@
         numTrainingExamples - Number of training examples
         patchSize - Size of training patches
 *******************************************************************************/
+QRgb normalize(int r, int g, int b)
+{
+    return qRgb(min(255, max(0, r)),
+                min(255, max(0, g)),
+                min(255, max(0, b)));
+}
+
 void MainWindow::OpenDataSet(QDir posdirectory, QDir negdirectory, double *trainingData, int *trainingLabel, int numTrainingExamples, int patchSize)
 {
     int i, c, r;
@@ -720,72 +731,71 @@ void MainWindow::DrawFace(QImage *displayImage, QMap<double, CDetection> *faceDe
 void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData/* All pixels from randomly picked data set*/,
                                     int *trainingLabel/* An binary array */, int numTrainingExamples, int patchSize)
 {
-    double *compositeFace = new double[patchSize*patchSize];
-    double *compositeNonFace = new double[patchSize*patchSize];
-    for (int y= 0; y< patchSize; y++)
-    {
-        for (int x= 0; x<patchSize; x++)
-        {
-            compositeFace[y*patchSize+x]=0 ;
-            compositeNonFace[y*patchSize+x]= 0;
-        }
-    }
-    // Loop through our training labels to determine how much of each we have
-    int compositeFaceCount = 0;
-    int compositeNonFaceCount = 0;
-    for (int i = 0; i<numTrainingExamples; i++)
-    {
-        if (trainingLabel[i]==1)
-        {
-            compositeFaceCount++;
-        }
-        else
-        {
-            compositeNonFaceCount++;
-        }
-    }
+   /* Buffer arrays */
+   double *avgFace = new double[patchSize*patchSize];
+   double *avgBack = new double[patchSize*patchSize];
 
-    for (int y= 0; y<patchSize; y++)
-    {
-        for (int x= 0; x<patchSize; x++)
-        {
-            for (int i= 0; i<numTrainingExamples; i++)
-            {
-                double trainingValue = trainingData[i*patchSize*patchSize+y*patchSize+x];
-                if (trainingLabel[i]==1)
-                {
-                    compositeFace[y*patchSize+x]+= trainingValue;
-                }
-                else
-                {
-                    compositeNonFace[y*patchSize+x]+= trainingValue;
-                }
-            }
-        }
-    }
+   /* Temporary variables */
+   int x= 0, y=0 , i= 0;/* iterators */
+   int index= 0, faceCount= 0, backCount= 0;
+   for (y= 0; y<patchSize; y++)
+   {
+       for (x= 0; x<patchSize; x++)
+       {
+           index= y*patchSize+x;
+           avgFace[index]=0, avgBack[index]= 0;
+       }
+   }
 
-    // Debug
-
-
-
+   faceCount= 0, backCount= 0;
+   for (i= 0; i<numTrainingExamples; i++)
+   {
+       if (1==trainingLabel[i])
+           faceCount++;
+       else /* 1==trainingLabel[i] */
+           backCount++;
+   }
+   assert(faceCount+backCount==numTrainingExamples);
+       for (y= 0; y<patchSize; y++)
+       {
+           for (x= 0; x<patchSize; x++)
+           {
+               index= y*patchSize+x;
+               for (i= 0; i<numTrainingExamples; i++)
+               {
+                   index= i*patchSize*patchSize+y*patchSize+x;
+                   if (1==trainingLabel[i])
+                      avgFace[index]+= trainingData[i*patchSize*patchSize+index];
+                   else /* 0==trainingLabel[i] */
+                      avgBack[index]+= trainingData[i*patchSize*patchSize+index];
+               }
+               avgFace[index]= static_cast<double>(avgFace[index])/static_cast<double>(faceCount);
+               avgBack[index]= static_cast<double>(avgBack[index])/static_cast<double>(backCount);
+           }
+       }
+    qDebug() <<  typeid(displayImage).name()<< "\n";
     // Resize displayImage
     QImage temp(patchSize*2, patchSize, displayImage->format());
     displayImage->swap(temp);
-    // Draw out the composite!
-    for (int y = 0; y < patchSize; y++)
-    {
-        for (int x = 0; x < patchSize; x++)
-        {
-            int intensityFace = static_cast<int>(floor((compositeFace[y*patchSize+x]/compositeFaceCount)+0.5));
-            int intensityNonFace = static_cast<int>(floor((compositeNonFace[y*patchSize+x]/compositeNonFaceCount)+0.5));
-            displayImage->setPixel(x, y, qRgb(intensityFace, intensityFace, intensityFace));
-            displayImage->setPixel(x+patchSize, y, qRgb(intensityNonFace, intensityNonFace, intensityNonFace));
-        }
-     }
 
-     // Clean up!
-     delete[] compositeNonFace;
-     delete[] compositeFace;
+    for (y= 0; y<patchSize; y++)
+    {
+       for (x= 0; x<patchSize; x++)
+       {
+           index= y*patchSize+x;
+           displayImage->setPixel(x, y, normalize(static_cast<int>(avgFace[index]),
+                                                  static_cast<int>(avgFace[index]),
+                                                  static_cast<int>(avgFace[index])
+                                                  ));
+           displayImage->setPixel(x+patchSize, y, normalize(static_cast<int>(avgBack[index]),
+                                                            static_cast<int>(avgBack[index]),
+                                                            static_cast<int>(avgBack[index])
+                                                  ));
+       }
+    }
+    /* Remove buffer arrays */
+    delete[] avgFace;
+    delete[] avgBack;
 
 }
 
