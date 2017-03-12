@@ -807,7 +807,41 @@ void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData/*
 *******************************************************************************/
 void MainWindow::IntegralImage(double *image, double *integralImage, int w, int h)
 {
-    // Add your code here.
+    // Temporary variables
+    int x= 0, y= 0, index= 0;
+    double *rowSum= new double[w*h];
+
+    for (y= 0; y<h; y++)
+        for (x= 0; x<w; x++)
+        {
+            index= y*w+x;
+            integralImage[index]= 0, rowSum[index]= 0;
+        }
+
+    /* First intergral */
+    for (y= 0; y<h; y++)
+    {
+        rowSum[y*w]= image[y*w];
+        for (x= 1; x<w; x++)
+        {
+            index= y*w+x;
+            rowSum[index]= rowSum[index-1]+image[index];
+        }
+    }
+
+    /* Second intergral */
+    for (x= 0; x<w; x++)
+    {
+        integralImage[x]= rowSum[x];
+        for (y= 1; y<h; y++)
+        {
+            index= y*w+x;
+            integralImage[index]= integralImage[index-w]+rowSum[index];
+        }
+    }
+
+    // Delete buffer array
+    delete[] rowSum;
 }
 
 /*******************************************************************************
