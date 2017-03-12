@@ -850,11 +850,25 @@ void MainWindow::IntegralImage(double *image, double *integralImage, int w, int 
         x, y - Position to interpolate
         w - Width of image (integralImage)
 *******************************************************************************/
-double MainWindow::BilinearInterpolation(double *image, double x, double y, int w)
+double MainWindow::BilinearInterpolation(double *image, double x, double y, int w /* Should include height */)
 {
-    // Add your code here (or cut and paste from a previous assignment.)
 
-    return 0.0;
+    double pixel= 0;
+    int x1= static_cast<int>(floor(x)), y1= static_cast<int>(floor(y)),
+        x2= static_cast<int>(ceil(x+0.00001)), y2= static_cast<int>(ceil(y+0.00001));// Keeping x1 and x2 not equal, y1 and y2 not equal
+    double a= x-x1, b= y-y1;
+    double pixel11 = (0<=x1&&x1<w&&0<=y1)?image[y1*w+x1]:0;//Keeping pixel in range : should include height
+    double pixel12 = (0<=x1&&x1<w&&0<=y2)?image[y2*w+x1]:0;
+    double pixel21 = (0<=x2&&x2<w&&0<=y1)?image[y1*w+x2]:0;
+    double pixel22 = (0<=x2&&x2<w&&0<=y2)?image[y2*w+x2]:0;
+
+    pixel= (1-a)*(1-b)*pixel11+
+             a*(1-b)*pixel21+
+             (1-a)*b*pixel12+
+             a*b*pixel22;
+    return pixel;
+
+
 }
 
 /*******************************************************************************
