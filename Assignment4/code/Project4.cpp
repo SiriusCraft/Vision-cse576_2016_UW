@@ -845,7 +845,7 @@ void MainWindow::IntegralImage(double *image, double *integralImage, int w, int 
 }
 
 /*******************************************************************************
-    SumBox - Helper function for SumBox - standard bilinear interpolation
+    BilinearInterpolation - Helper function for SumBox - standard bilinear interpolation
         image - image
         x, y - Position to interpolate
         w - Width of image (integralImage)
@@ -880,9 +880,15 @@ double MainWindow::BilinearInterpolation(double *image, double x, double y, int 
 *******************************************************************************/
 double MainWindow::SumBox(double *integralImage, double x0, double y0, double x1, double y1, int w)
 {
-    // Add your code here, use BilinearInterpolation as a helper function.
+    double sum= 0.;
 
-    return 0.0;
+    double A= BilinearInterpolation(integralImage, x0, y0, w);
+    double B= BilinearInterpolation(integralImage, x0, y1, w);
+    double C= BilinearInterpolation(integralImage, x1, y0, w);
+    double D= BilinearInterpolation(integralImage, x1, y1, w);
+
+    sum= D-B-C+A;
+    return sum;
 }
 
 /*******************************************************************************
