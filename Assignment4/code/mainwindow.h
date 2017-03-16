@@ -32,9 +32,9 @@ public:
     double m_Area;
     double m_Threshold;
     double m_Polarity;
-    double m_Weight;
+    double m_Weight;/* Adaboost weight */
 
-    void copy(CWeakClassifiers *wc)
+    void copy(CWeakClassifiers *wc) //Copy to CWeakClassifier *wc
     {
         wc->m_NumBoxes = m_NumBoxes;
         wc->m_Box = new double [m_NumBoxes][2][2];

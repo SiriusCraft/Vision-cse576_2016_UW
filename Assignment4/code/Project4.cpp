@@ -1,4 +1,3 @@
-
 #include "mainwindow.h"
 #include "math.h"
 #include "ui_mainwindow.h"
@@ -301,7 +300,7 @@ void MainWindow::InitializeFeatures(CWeakClassifiers *weakClassifiers, int numWe
         h = 0.25 + 0.71*(double) rand()/(double) RAND_MAX;
         y = 0.02 + (0.96 - h)*(double) rand()/(double) RAND_MAX;
 
-        int boxType = rand()%3;
+        int boxType = rand()%3; //boxType is random
 
         if(boxType == 0)
         {
@@ -490,7 +489,7 @@ void MainWindow::DisplayFeatures(QImage *displayImage, double *features, int *tr
 
 /*******************************************************************************
     AdaBoost - Computes and AdaBoost classifier using a set of candidate weak classifiers
-        features - Array of feature values pre-computed for the training dataset
+        features - Array of feature values pre-computed for the training dataset: size numTrainingExamples*numCandidateWeakClassifiers
         trainingLabel - Ground truth labels for the training examples (1 = face, 0 = background)
         numTrainingExamples - Number of training examples
         candidateWeakClassifiers - Set of candidate weak classifiers
@@ -512,7 +511,7 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
     memset(scores, 0, numTrainingExamples*sizeof(double));
 
     int i, j;
-    // The weighting for each training example
+    // The weighting for each training example: number of weights = number of training data
     double *dataWeights = new double [numTrainingExamples];
 
     // Begin with uniform weighting
@@ -551,7 +550,7 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
 
 
     // Find a set of weak classifiers using AdaBoost
-    for(i=0;i<numWeakClassifiers;i++)
+    for(i=0;i<numWeakClassifiers/*  number of selected weak classifiers */;i++)
     {
         double bestError = 99999.0;
         int bestIdx = 0;
@@ -878,7 +877,7 @@ double MainWindow::BilinearInterpolation(double *image, double x, double y, int 
         x1, y1 - Lower righthand corner of box
         w - Width of image (integralImage)
 *******************************************************************************/
-double MainWindow::SumBox(double *integralImage, double x0, double y0, double x1, double y1, int w)
+double MainWindow::SumBox(double *integralImage, double x0, double y0/* Upper left */, double x1, double y1, int w)
 {
     double sum= 0.;
 
@@ -901,23 +900,28 @@ double MainWindow::SumBox(double *integralImage, double x0, double y0, double x1
         numWeakClassifiers - Number of weak classifiers
         w - Width of image (integralImage)
 *******************************************************************************/
-void MainWindow::ComputeFeatures(double *integralImage, int c0, int r0, int size, double *features, CWeakClassifiers *weakClassifiers, int numWeakClassifiers, int w)
+void MainWindow::ComputeFeatures(double *integralImage, int c0/* x */, int r0/* y */, int size, double *features, CWeakClassifiers *weakClassifiers, int numWeakClassifiers, int w)
 {
     int i, j;
+    double x0= 0., y0= 0., x1= 0., y1= 0., sum;
 
-    for(i=0;i<numWeakClassifiers;i++)
+    // Every classifier has one feature value assigned to it
+    for(i=0; i<numWeakClassifiers; i++)
     {
         features[i] = 0.0;
-
-        for(j=0;j<weakClassifiers[i].m_NumBoxes;j++)
+          for(j=0;j<weakClassifiers[i].m_NumBoxes/* 2 or 3 */; j++)
         {
-            // Add your code to compute the sum of the pixels within each box weakClassifiers[i].m_Box[j]
-            double sum = 0.0;
-
-            // Store the final feature value
+            /* size - x: [1][0]-[0][0]  y: [0][1]-[1][1] */
+            x0 = weakClassifiers[i].m_Box[j][0][0]*size+c0; /* x0 = c0+size    */
+            y0 = weakClassifiers[i].m_Box[j][0][1]*size+r0;
+            x1 = weakClassifiers[i].m_Box[j][1][0]*size+c0; /* x1 = c0+2*size? */
+            y1 = weakClassifiers[i].m_Box[j][1][1]*size+r0;
+            sum = SumBox(integralImage, x0, y0, x1, y1, w);
+            // Selected feature value is a sum in m_box ?
             features[i] += weakClassifiers[i].m_BoxSign[j]*sum/((double) (size*size));
         }
     }
+
 }
 
 /*******************************************************************************
