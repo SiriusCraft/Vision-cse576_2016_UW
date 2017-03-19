@@ -7,6 +7,7 @@
 #include <QDebug>
 #include <cassert>
 #include <typeinfo>
+#pragma clang diagnostic ignored "-Wunused-parameter"
 /*******************************************************************************
     The following are helper routines with code already written.
     The routines you'll need to write for the assignment are below.
@@ -514,7 +515,7 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
     // The weighting for each training example: number of weights = number of training data
     double *dataWeights = new double [numTrainingExamples];
 
-    // Begin with uniform weighting
+    // Step 1: normalize the weights
     for(i=0;i<numTrainingExamples;i++)
         dataWeights[i] = 1.0/(double) (numTrainingExamples);
 
@@ -522,9 +523,9 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
     // Let's sort the feature values for each candidate weak classifier
     for(i=0;i<numCandidateWeakClassifiers;i++)
     {
-        QMap<double, int> featureSort;
+        /* For specific feature i */
+        QMap<double, int> featureSort; // Key is the feature, value is an the numbering for specific training example: 0 - numTrainingExamples
         QMap<double, int>::const_iterator iterator;
-
 
         for(j=0;j<numTrainingExamples;j++)
         {
@@ -539,6 +540,11 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
         // Let's remember the indices of the sorted features for later.
         while (iterator != featureSort.constEnd())
         {
+            /*
+             * featureSortIdx
+             * For each classifier row, feature values are ordered increasingly
+             *
+             */
             featureSortIdx[i*numTrainingExamples + j] = iterator.value();
             iterator++;
             j++;
@@ -550,13 +556,13 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
 
 
     // Find a set of weak classifiers using AdaBoost
-    for(i=0;i<numWeakClassifiers/*  number of selected weak classifiers */;i++)
+    for(i=0;i<numWeakClassifiers/*  number of selected weak classifiers */;i++) // Time step
     {
         double bestError = 99999.0;
-        int bestIdx = 0;
+        int bestIdx = -1;
 
         // For each potential weak classifier
-        for(j=0;j<numCandidateWeakClassifiers;j++)
+        for(j=0;j<numCandidateWeakClassifiers/* Number of weak classifiers required */;j++)
         {
             CWeakClassifiers bestClassifier;
 
@@ -573,19 +579,19 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
                 bestIdx = j;
 
                 // Remember the best classifier
-                bestClassifier.copy(&(weakClassifiers[i]));
+                bestClassifier.copy(&(weakClassifiers[i])); //i ? j
             }
         }
 
-        // Given the best weak classifier found, update the weighting of the training data.
-        UpdateDataWeights(&(featureTranspose[bestIdx*numTrainingExamples]), trainingLabel, weakClassifiers[i], dataWeights, numTrainingExamples);
+        // Step 4: update the weights according to the best classifier
+        UpdateDataWeights(&(featureTranspose[bestIdx*numTrainingExamples]), trainingLabel, weakClassifiers[i], dataWeights, numTrainingExamples, bestError);
 
         // Let's compute the current error for the training dataset
         weightSum += weakClassifiers[i].m_Weight;
         double error = 0.0;
         for(j=0;j<numTrainingExamples;j++)
         {
-            if(featureTranspose[bestIdx*numTrainingExamples + j] > weakClassifiers[i].m_Threshold)
+            if(featureTranspose[bestIdx*numTrainingExamples+j]>weakClassifiers[i].m_Threshold)
             {
                 scores[j] += weakClassifiers[i].m_Weight*weakClassifiers[i].m_Polarity;
             }
@@ -730,71 +736,76 @@ void MainWindow::DrawFace(QImage *displayImage, QMap<double, CDetection> *faceDe
 void MainWindow::DisplayAverageFace(QImage *displayImage, double *trainingData/* All pixels from randomly picked data set*/,
                                     int *trainingLabel/* An binary array */, int numTrainingExamples, int patchSize)
 {
-   /* Buffer arrays */
-   double *avgFace = new double[patchSize*patchSize];
-   double *avgBack = new double[patchSize*patchSize];
+     /* Buffer arrays */
+     double *avgFace = new double[patchSize*patchSize];
+     double *avgBack = new double[patchSize*patchSize];
 
-   /* Temporary variables */
-   int x= 0, y=0 , i= 0;/* iterators */
-   int index= 0, faceCount= 0, backCount= 0;
-   for (y= 0; y<patchSize; y++)
-   {
-       for (x= 0; x<patchSize; x++)
-       {
-           index= y*patchSize+x;
-           avgFace[index]=0, avgBack[index]= 0;
-       }
-   }
+     /* Temporary variables */
+     int x= 0, y=0 , i= 0;/* iterators */
+     int index= 0, faceCount= 0, backCount= 0;
 
-   faceCount= 0, backCount= 0;
-   for (i= 0; i<numTrainingExamples; i++)
-   {
-       if (1==trainingLabel[i])
-           faceCount++;
-       else /* 1==trainingLabel[i] */
-           backCount++;
-   }
-   assert(faceCount+backCount==numTrainingExamples);
-       for (y= 0; y<patchSize; y++)
-       {
-           for (x= 0; x<patchSize; x++)
-           {
-               index= y*patchSize+x;
-               for (i= 0; i<numTrainingExamples; i++)
-               {
-                   index= i*patchSize*patchSize+y*patchSize+x;
-                   if (1==trainingLabel[i])
-                      avgFace[index]+= trainingData[i*patchSize*patchSize+index];
-                   else /* 0==trainingLabel[i] */
-                      avgBack[index]+= trainingData[i*patchSize*patchSize+index];
-               }
-               avgFace[index]= static_cast<double>(avgFace[index])/static_cast<double>(faceCount);
-               avgBack[index]= static_cast<double>(avgBack[index])/static_cast<double>(backCount);
-           }
-       }
-    qDebug() <<  typeid(displayImage).name()<< "\n";
-    // Resize displayImage
-    QImage temp(patchSize*2, patchSize, displayImage->format());
-    displayImage->swap(temp);
 
-    for (y= 0; y<patchSize; y++)
-    {
-       for (x= 0; x<patchSize; x++)
-       {
-           index= y*patchSize+x;
-           displayImage->setPixel(x, y, normalize(static_cast<int>(avgFace[index]),
-                                                  static_cast<int>(avgFace[index]),
-                                                  static_cast<int>(avgFace[index])
-                                                  ));
-           displayImage->setPixel(x+patchSize, y, normalize(static_cast<int>(avgBack[index]),
-                                                            static_cast<int>(avgBack[index]),
-                                                            static_cast<int>(avgBack[index])
-                                                  ));
-       }
-    }
-    /* Remove buffer arrays */
-    delete[] avgFace;
-    delete[] avgBack;
+     for (y= 0; y<patchSize; y++)
+     {
+         for (x= 0; x<patchSize; x++)
+         {
+             index= y*patchSize+x;
+             avgFace[index]=0, avgBack[index]= 0;
+         }
+     }
+
+     faceCount= 0, backCount= 0;
+     for (i= 0; i<numTrainingExamples; i++)
+     {
+         if (1==trainingLabel[i])
+             faceCount++;
+         else /* 1==trainingLabel[i] */
+             backCount++;
+     }
+
+     assert(faceCount+backCount==numTrainingExamples);
+
+     for (y= 0; y<patchSize; y++)
+     {
+         for (x= 0; x<patchSize; x++)
+         {
+             index= y*patchSize+x;
+             for (i= 0; i<numTrainingExamples; i++)
+             {
+                 index= y*patchSize+x;
+                 if (1==trainingLabel[i])
+                    avgFace[index]+= trainingData[i*patchSize*patchSize+index];
+                 else /* 0==trainingLabel[i] */
+                    avgBack[index]+= trainingData[i*patchSize*patchSize+index];
+             }
+             avgFace[index]= static_cast<double>(avgFace[index])/static_cast<double>(faceCount);
+             avgBack[index]= static_cast<double>(avgBack[index])/static_cast<double>(backCount);
+         }
+     }
+
+     // Display image
+     QImage temp(patchSize*2, patchSize, displayImage->format());
+     displayImage->swap(temp);
+
+     for (y= 0; y<patchSize; y++)
+     {
+        for (x= 0; x<patchSize; x++)
+        {
+            index= y*patchSize+x;
+            displayImage->setPixel(x, y, normalize(static_cast<int>(avgFace[index]),
+                                                   static_cast<int>(avgFace[index]),
+                                                   static_cast<int>(avgFace[index])
+                                                   ));
+            displayImage->setPixel(x+patchSize, y, normalize(static_cast<int>(avgBack[index]),
+                                                             static_cast<int>(avgBack[index]),
+                                                             static_cast<int>(avgBack[index])
+                                                   ));
+        }
+     }
+     /* Remove buffer arrays */
+     delete[] avgFace;
+     delete[] avgBack;
+
 
 }
 
@@ -938,13 +949,61 @@ void MainWindow::ComputeFeatures(double *integralImage, int c0/* x */, int r0/* 
 double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int *trainingLabel, double *dataWeights,
                                       int numTrainingExamples, CWeakClassifiers candidateWeakClassifier, CWeakClassifiers *bestClassifier)
 {
-    double bestError = 99999999.0;
+    double bestError= 99999999.0, error= 0.;
+    int bestParity= 0 /* 0 or 1*/, bestThresholdIdx= -1;
 
-    // Copy the weak classifiers params
-    candidateWeakClassifier.copy(bestClassifier);
+    int i= 0, index= 0;
+    int normalizedParity= -1; // normalizedParity takes 1 and +1 while parity take 0 and 1
+    //int thresholdIdx= -1; // thresholdIdx takes all the features have index greatere than thresholdIdx has gross feature greater than threshold
+    int classifiedLabel= 0; // 1 for face, 0 for non-face
+
+    for (normalizedParity= -1; normalizedParity<1; normalizedParity+=2)
+    {
+        /* First step " thresholdIdx is -1
+        //thresholdIdx= -1;
+        /*When thresholdIdx is -1, calculate the error: I
+         * n this case we do not need to consider the ordering in the features
+         */
+        bestError=0., bestThresholdIdx= -1;
+        for (i= 0; i<numTrainingExamples; i++)
+        {
+
+            classifiedLabel= (normalizedParity*features[i]>trainingLabel[i])? 1 : 0;
+            if (classifiedLabel!=trainingLabel[i])
+                bestError++;
+        }
+
+        error= bestError; // error is a tentative error as threshold index moves leftward
+        for (i= 0/* Tentative threshold index */; i<numTrainingExamples -1; i++)
+        {
+            index= featureSortIdx[i]; // The real index for the i+1 th smallest feature
+            // move the threshold index left by 1 step, this will "cut" the feature (with index) index off
+            classifiedLabel= (normalizedParity*features[index]>trainingLabel[index])? 1 : 0;
+            if (classifiedLabel!=trainingLabel[index])
+                error--;
+            else //((classifiedLabel==trainingLabel[index]))
+                error++;
+
+            if (error<bestError)
+            {
+                bestThresholdIdx= i;
+                bestError= error;
+                bestParity= (normalizedParity>0)? 1 : 0;
+            }
+
+        }
+
+        // Set the bestClassifier
+        bestClassifier->m_Polarity= bestParity;
+        bestClassifier->m_Threshold= features[featureSortIdx[bestThresholdIdx]];
+        bestClassifier->m_Weight= log(1-bestError)-log(bestError);
+
+        return bestError;
 
 
-    // Add your code here.
+    }
+
+
 
     // Once you find the best weak classifier, you'll need to update the following member variables:
     //      bestClassifier->m_Polarity
@@ -963,9 +1022,22 @@ double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int
         dataWeights - Weights used to weight each training example.  These are teh weights updated.
         numTrainingExamples - Number of training examples
 *******************************************************************************/
-void MainWindow::UpdateDataWeights(double *features, int *trainingLabel, CWeakClassifiers weakClassifier, double *dataWeights, int numTrainingExamples)
+void MainWindow::UpdateDataWeights(double *features, int *trainingLabel, CWeakClassifiers weakClassifier, double *dataWeights, int numTrainingExamples, double bestError)
 {
-    // Add you code here.
+    int i= 0, classificationLabel= 0;
+    double beta= bestError/(1-bestError);
+    for (i=0; i<numTrainingExamples; i++)
+    {
+        /*
+         * Assigning the polarity, use either 1 or 0
+         * with 1 = face above threshold, and 0 = face below threshold.
+         */
+        classificationLabel= ((1==weakClassifier.m_Polarity&&features[i]>weakClassifier.m_Threshold)||
+                              (0==weakClassifier.m_Polarity&&features[i]<weakClassifier.m_Threshold)) ? 1: 0;
+
+        dataWeights[i]*=(trainingLabel[i]==classificationLabel)? beta: 1;
+    }
+
 }
 
 /*******************************************************************************

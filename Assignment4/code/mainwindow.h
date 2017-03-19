@@ -121,7 +121,7 @@ private:
     // Step 2
     double FindBestClassifier(int *featureSortIdx, double *features, int *trainingLabel, double *dataWeights,
                               int numTrainingExamples, CWeakClassifiers candidateWeakClassifiers, CWeakClassifiers *bestClassifier);
-    void UpdateDataWeights(double *features, int *trainingLabel, CWeakClassifiers weakClassifier, double *dataWeights, int numTrainingExamples);
+    void UpdateDataWeights(double *features, int *trainingLabel, CWeakClassifiers weakClassifier, double *dataWeights, int numTrainingExamples, double bestError);
 
     // Step 3
     double ClassifyBox(double *integralImage, int c0, int r0, int size, CWeakClassifiers *weakClassifiers, int numWeakClassifiers, int w);
