@@ -954,9 +954,21 @@ double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int
     for (int parity = 0; parity < 2; parity++)
     {
         error = 0.;
+        /*
+         * For convenience, let's specify the parity rule
+         * for parity =1 , face if feature >=threshold, background if feature < threshold
+         * for parity =0 , face if feature < threshold, background if feature >=threshold
+         *
+         * Therefore, when we change threshold index from t to t+1,
+         * Only the classified label at t will change
+         */
 
-        // Calculate the errors assuming we are at the left-most threshold
-        // (such that every feature is greater than the threshold).
+
+        /*
+         * First step " threshold has index -1
+         * n this case we do not need to consider the ordering in the features
+         */
+
         for (int i = 0; i < numTrainingExamples; i++)
             /* the classified labels are : parity, parity, parity, parity ..., parity*/
             if ((parity!=trainingLabel[i]))
@@ -1012,27 +1024,30 @@ double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int
 *******************************************************************************/
 void MainWindow::UpdateDataWeights(double *features, int *trainingLabel, CWeakClassifiers weakClassifier, double *dataWeights, int numTrainingExamples, double bestError)
 {
-    double polarity = weakClassifier.m_Polarity;
-    double threshold = weakClassifier.m_Threshold;
-    double weight = weakClassifier.m_Weight;
-    double sumWeights =0.;
-    for (int i = 0; i < numTrainingExamples; i++)
+    int i= 0, classificationLabel= 0;
+    double beta= bestError/(1-bestError);
+    double sum= 0.;
+    double threshold= weakClassifier.m_Threshold;
+    weakClassifier.m_Weight= -log(beta);
+    for (i=0; i<numTrainingExamples; i++)
     {
-        double feature = features[i];
-        bool actual = ((polarity == 1 && feature > threshold) || (polarity == 0 && feature < threshold));
-        bool expected = (trainingLabel[i] == 1);
-        if (actual == expected)
-        {
-            dataWeights[i] *= (1 / pow(M_E, weight));
-        }
-
-        sumWeights += dataWeights[i];
+        double weight= dataWeights[i];
+        double feature= features[i];
+        int trueLabel= trainingLabel[i];
+        int polarity= static_cast<int>(weakClassifier.m_Polarity);
+        /*
+         * Assigning the polarity, use either 1 or 0
+         * with 1 = face above threshold, and 0 = face below threshold.
+         */
+        classificationLabel= ((1==polarity&& feature>=threshold)||(0==polarity && feature<threshold))? 1 : 0;
+        weight= dataWeights[i]*=(trueLabel==classificationLabel)? beta: 1;
+        sum+= weight;
     }
 
-    // Normalize the weights!
-    for (int i = 0; i < numTrainingExamples; i++)
+    for (i=0; i<numTrainingExamples; i++)
     {
-        dataWeights[i] /= sumWeights;
+        double weight= 0.;
+        weight= dataWeights[i]/=sum;
     }
 
 }
