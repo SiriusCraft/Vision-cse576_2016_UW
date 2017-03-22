@@ -958,9 +958,9 @@ double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int
         // Calculate the errors assuming we are at the left-most threshold
         // (such that every feature is greater than the threshold).
         for (int i = 0; i < numTrainingExamples; i++)
-            if ((0!=trainingLabel[i]) != (0!=parity))
+            /* the classified labels are : parity, parity, parity, parity ..., parity*/
+            if ((parity!=trainingLabel[i]))
                 error += dataWeights[i];
-        bestThresholdIdx= -1;
         /*
          * bestThresholdIdx means the following
          * for bestThresholdIdx+1, bestThresholdIdx+2 ... numTrainingExamples-1 are considered large than the threshold
@@ -970,61 +970,34 @@ double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int
         {
             bestError = error;
             bestParity = parity;
-            bestClassifier->m_Threshold = (features[featureSortIdx[0]] - 1.0);
-
-            /*bestError= error;
-            bestParity= parity;
-            //bestThresholdIdx= -1;*/
+            bestThresholdIdx= -1;
         }
 
-        for (i = 0; i < numTrainingExamples; i++)
+        for (i= 0; i<numTrainingExamples; i++)
         {
-            index = featureSortIdx[i];
-            if ((trainingLabel[index] != 0) == (parity != 0))
-                error += dataWeights[index];
+            index= featureSortIdx[i];
+            if (parity==trainingLabel[index])
+                error+= dataWeights[index];
             else
-                error -= dataWeights[index];
-
+                error-= dataWeights[index];
 
             if (error<bestError)
             {
-                double threshold;
-                if (i != (numTrainingExamples-1))
-                {
-                    // We've not yet moved past the last feature, so threshold
-                    // is between two features
-                    double low = features[index];
-                    threshold = (low + ((features[featureSortIdx[i+1]] - low) / 2));
-                }
-                else
-                {
-                    // Just moved past the last feature, so threshold is as far
-                    // right as it can be
-                    threshold = (features[index] + 1.0);
-                }
+                bestThresholdIdx= i;
                 bestError = error;
                 bestParity= parity;
-                bestClassifier->m_Threshold = threshold;
-
-
             }
+
         }
     }
 
-    // Set the bestClassifier
-    /*
-     bestClassifier->m_Polarity= bestParity;
     if (-1==bestThresholdIdx)
-        bestClassifier->m_Threshold= features[0]-1.0;
+        bestClassifier->m_Threshold= features[featureSortIdx[0]]-1.0;
     else
-        if (numTrainingExamples-1 == bestThresholdIdx)
-            bestClassifier->m_Threshold= features[numTrainingExamples-1]+1.0;
-        else
-            bestClassifier->m_Threshold= (features[featureSortIdx[bestThresholdIdx]]+features[featureSortIdx[bestThresholdIdx+1]])/2;
-
-*/
+        bestClassifier->m_Threshold= features[featureSortIdx[bestThresholdIdx]]; //+features[featureSortIdx[bestThresholdIdx+1]])*0.5;
     bestClassifier->m_Polarity= bestParity;
-    bestClassifier->m_Weight= log((1-bestError-0.0000001)/(bestError+0.0000001));
+    double protection= bestError+0.000001; // protection for log
+    bestClassifier->m_Weight= log((1-protection)/protection);
     return bestError;
 
 }
