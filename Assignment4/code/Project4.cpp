@@ -1031,24 +1031,18 @@ void MainWindow::UpdateDataWeights(double *features, int *trainingLabel, CWeakCl
     weakClassifier.m_Weight= -log(beta);
     for (i=0; i<numTrainingExamples; i++)
     {
-        double weight= dataWeights[i];
-        double feature= features[i];
-        int trueLabel= trainingLabel[i];
         int polarity= static_cast<int>(weakClassifier.m_Polarity);
         /*
          * Assigning the polarity, use either 1 or 0
          * with 1 = face above threshold, and 0 = face below threshold.
          */
-        classificationLabel= ((1==polarity&& feature>=threshold)||(0==polarity && feature<threshold))? 1 : 0;
-        weight= dataWeights[i]*=(trueLabel==classificationLabel)? beta: 1;
-        sum+= weight;
+        classificationLabel= ((1==polarity&& features[i]>=threshold)||(0==polarity && features[i]<threshold))? 1 : 0;
+        dataWeights[i]*=(trainingLabel[i]==classificationLabel)? beta: 1;
+        sum+= dataWeights[i];
     }
 
     for (i=0; i<numTrainingExamples; i++)
-    {
-        double weight= 0.;
-        weight= dataWeights[i]/=sum;
-    }
+        dataWeights[i]/=sum;
 
 }
 /*******************************************************************************
