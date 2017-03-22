@@ -1097,7 +1097,45 @@ release/mainwindow.o: ../code/mainwindow.cpp ../code/mainwindow.h \
 		C:/Qt/5.8/mingw53_32/include/QtGui/qtexttable.h \
 		C:/Qt/5.8/mingw53_32/include/QtGui/qvalidator.h \
 		C:/Qt/5.8/mingw53_32/include/QtGui/qtguiversion.h \
-		ui_mainwindow.h \
+		../code/ui_mainwindow.h \
+		C:/Qt/5.8/mingw53_32/include/QtCore/QVariant \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QAction \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qaction.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qactiongroup.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QApplication \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qapplication.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qdesktopwidget.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QButtonGroup \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qbuttongroup.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QDoubleSpinBox \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qspinbox.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractspinbox.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QFrame \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qframe.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QHeaderView \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qheaderview.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractitemview.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractscrollarea.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractitemdelegate.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qstyleoption.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qslider.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractslider.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qstyle.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qtabbar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qrubberband.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QLabel \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qlabel.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QMenuBar \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qmenubar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qmenu.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QPushButton \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qpushbutton.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractbutton.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QStatusBar \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qstatusbar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QToolBar \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qtoolbar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QWidget \
 		C:/Qt/5.8/mingw53_32/include/QtWidgets/QFileDialog \
 		C:/Qt/5.8/mingw53_32/include/QtWidgets/qfiledialog.h \
 		C:/Qt/5.8/mingw53_32/include/QtWidgets/qdialog.h
@@ -1424,7 +1462,46 @@ release/Project4.o: ../code/Project4.cpp ../code/mainwindow.h \
 		C:/Qt/5.8/mingw53_32/include/QtGui/qtexttable.h \
 		C:/Qt/5.8/mingw53_32/include/QtGui/qvalidator.h \
 		C:/Qt/5.8/mingw53_32/include/QtGui/qtguiversion.h \
-		ui_mainwindow.h
+		../code/ui_mainwindow.h \
+		C:/Qt/5.8/mingw53_32/include/QtCore/QVariant \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QAction \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qaction.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qactiongroup.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QApplication \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qapplication.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qdesktopwidget.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QButtonGroup \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qbuttongroup.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QDoubleSpinBox \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qspinbox.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractspinbox.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QFrame \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qframe.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QHeaderView \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qheaderview.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractitemview.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractscrollarea.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractitemdelegate.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qstyleoption.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qslider.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractslider.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qstyle.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qtabbar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qrubberband.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QLabel \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qlabel.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QMenuBar \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qmenubar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qmenu.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QPushButton \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qpushbutton.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qabstractbutton.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QStatusBar \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qstatusbar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QToolBar \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/qtoolbar.h \
+		C:/Qt/5.8/mingw53_32/include/QtWidgets/QWidget \
+		C:/Qt/5.8/mingw53_32/include/QtCore/QDebug
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o release\Project4.o ..\code\Project4.cpp
 
 release/moc_mainwindow.o: release/moc_mainwindow.cpp 

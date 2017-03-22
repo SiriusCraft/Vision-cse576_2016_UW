@@ -501,21 +501,23 @@ void MainWindow::DisplayFeatures(QImage *displayImage, double *features, int *tr
 void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingExamples,
               CWeakClassifiers *candidateWeakClassifiers, int numCandidateWeakClassifiers, CWeakClassifiers *weakClassifiers, int numWeakClassifiers)
 {
+
     FILE *out;
-    out = fopen("AdaBoost.txt", "w");
+    fopen_s(&out, "AdaBoost.txt", "w");
     double *scores = new double [numTrainingExamples];
     double weightSum = 0.0;
     int *featureSortIdx = new int [numTrainingExamples*numCandidateWeakClassifiers];
     double *featureTranspose = new double [numTrainingExamples*numCandidateWeakClassifiers];
 
+    // numCandidateWeakClassifiers= 3;
     // Record the classification socres for each training example
     memset(scores, 0, numTrainingExamples*sizeof(double));
 
     int i, j;
-    // The weighting for each training example: number of weights = number of training data
+    // The weighting for each training example
     double *dataWeights = new double [numTrainingExamples];
 
-    // Step 1: normalize the weights
+    // Begin with uniform weighting
     for(i=0;i<numTrainingExamples;i++)
         dataWeights[i] = 1.0/(double) (numTrainingExamples);
 
@@ -523,9 +525,9 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
     // Let's sort the feature values for each candidate weak classifier
     for(i=0;i<numCandidateWeakClassifiers;i++)
     {
-        /* For specific feature i */
-        QMap<double, int> featureSort; // Key is the feature, value is an the numbering for specific training example: 0 - numTrainingExamples
+        QMap<double, int> featureSort;
         QMap<double, int>::const_iterator iterator;
+
 
         for(j=0;j<numTrainingExamples;j++)
         {
@@ -540,11 +542,6 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
         // Let's remember the indices of the sorted features for later.
         while (iterator != featureSort.constEnd())
         {
-            /*
-             * featureSortIdx
-             * For each classifier row, feature values are ordered increasingly
-             *
-             */
             featureSortIdx[i*numTrainingExamples + j] = iterator.value();
             iterator++;
             j++;
@@ -556,13 +553,13 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
 
 
     // Find a set of weak classifiers using AdaBoost
-    for(i=0;i<numWeakClassifiers/*  number of selected weak classifiers */;i++) // Time step
+    for(i=0;i<numWeakClassifiers;i++)
     {
         double bestError = 99999.0;
-        int bestIdx = -1;
+        int bestIdx = 0;
 
         // For each potential weak classifier
-        for(j=0;j<numCandidateWeakClassifiers/* Number of weak classifiers required */;j++)
+        for(j=0;j<numCandidateWeakClassifiers;j++)
         {
             CWeakClassifiers bestClassifier;
 
@@ -579,11 +576,11 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
                 bestIdx = j;
 
                 // Remember the best classifier
-                bestClassifier.copy(&(weakClassifiers[i])); //i ? j
+                bestClassifier.copy(&(weakClassifiers[i]));
             }
         }
 
-        // Step 4: update the weights according to the best classifier
+        // Given the best weak classifier found, update the weighting of the training data.
         UpdateDataWeights(&(featureTranspose[bestIdx*numTrainingExamples]), trainingLabel, weakClassifiers[i], dataWeights, numTrainingExamples, bestError);
 
         // Let's compute the current error for the training dataset
@@ -591,7 +588,7 @@ void MainWindow::AdaBoost(double *features, int *trainingLabel, int numTrainingE
         double error = 0.0;
         for(j=0;j<numTrainingExamples;j++)
         {
-            if(featureTranspose[bestIdx*numTrainingExamples+j]>weakClassifiers[i].m_Threshold)
+            if(featureTranspose[bestIdx*numTrainingExamples + j] > weakClassifiers[i].m_Threshold)
             {
                 scores[j] += weakClassifiers[i].m_Weight*weakClassifiers[i].m_Polarity;
             }
@@ -949,67 +946,85 @@ void MainWindow::ComputeFeatures(double *integralImage, int c0/* x */, int r0/* 
 double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int *trainingLabel, double *dataWeights,
                                       int numTrainingExamples, CWeakClassifiers candidateWeakClassifier, CWeakClassifiers *bestClassifier)
 {
-    double bestError= 99999999.0, error= 0.;
-    int bestParity= 0 /* 0 or 1*/, bestThresholdIdx= -1;
+    // Copy the weak classifiers params
+    candidateWeakClassifier.copy(bestClassifier);
 
-    int i= 0, index= 0;
-    int normalizedParity= -1; // normalizedParity takes 1 and +1 while parity take 0 and 1
-    //int thresholdIdx= -1; // thresholdIdx takes all the features have index greatere than thresholdIdx has gross feature greater than threshold
-    int classifiedLabel= 0; // 1 for face, 0 for non-face
-
-    for (normalizedParity= -1; normalizedParity<1; normalizedParity+=2)
+    int i=0, index=0, bestThresholdIdx= -1, bestParity=0;
+    double bestError =2.0, error= 0.;
+    for (int parity = 0; parity < 2; parity++)
     {
-        /* First step " thresholdIdx is -1
-        //thresholdIdx= -1;
-        /*When thresholdIdx is -1, calculate the error: I
-         * n this case we do not need to consider the ordering in the features
-         */
-        bestError=0., bestThresholdIdx= -1;
-        for (i= 0; i<numTrainingExamples; i++)
-        {
+        error = 0.;
 
-            classifiedLabel= (normalizedParity*features[i]>trainingLabel[i])? 1 : 0;
-            if (classifiedLabel!=trainingLabel[i])
-                bestError++;
+        // Calculate the errors assuming we are at the left-most threshold
+        // (such that every feature is greater than the threshold).
+        for (int i = 0; i < numTrainingExamples; i++)
+            if ((0!=trainingLabel[i]) != (0!=parity))
+                error += dataWeights[i];
+        bestThresholdIdx= -1;
+        /*
+         * bestThresholdIdx means the following
+         * for bestThresholdIdx+1, bestThresholdIdx+2 ... numTrainingExamples-1 are considered large than the threshold
+         * features are smaller than the threshold otherwise
+         */
+        if (error<bestError)
+        {
+            bestError = error;
+            bestParity = parity;
+            bestClassifier->m_Threshold = (features[featureSortIdx[0]] - 1.0);
+
+            /*bestError= error;
+            bestParity= parity;
+            //bestThresholdIdx= -1;*/
         }
 
-        error= bestError; // error is a tentative error as threshold index moves leftward
-        for (i= 0/* Tentative threshold index */; i<numTrainingExamples -1; i++)
+        for (i = 0; i < numTrainingExamples; i++)
         {
-            index= featureSortIdx[i]; // The real index for the i+1 th smallest feature
-            // move the threshold index left by 1 step, this will "cut" the feature (with index) index off
-            classifiedLabel= (normalizedParity*features[index]>trainingLabel[index])? 1 : 0;
-            if (classifiedLabel!=trainingLabel[index])
-                error--;
-            else //((classifiedLabel==trainingLabel[index]))
-                error++;
+            index = featureSortIdx[i];
+            if ((trainingLabel[index] != 0) == (parity != 0))
+                error += dataWeights[index];
+            else
+                error -= dataWeights[index];
+
 
             if (error<bestError)
             {
-                bestThresholdIdx= i;
-                bestError= error;
-                bestParity= (normalizedParity>0)? 1 : 0;
+                double threshold;
+                if (i != (numTrainingExamples-1))
+                {
+                    // We've not yet moved past the last feature, so threshold
+                    // is between two features
+                    double low = features[index];
+                    threshold = (low + ((features[featureSortIdx[i+1]] - low) / 2));
+                }
+                else
+                {
+                    // Just moved past the last feature, so threshold is as far
+                    // right as it can be
+                    threshold = (features[index] + 1.0);
+                }
+                bestError = error;
+                bestParity= parity;
+                bestClassifier->m_Threshold = threshold;
+
+
             }
-
         }
-
-        // Set the bestClassifier
-        bestClassifier->m_Polarity= bestParity;
-        bestClassifier->m_Threshold= features[featureSortIdx[bestThresholdIdx]];
-        bestClassifier->m_Weight= log(1-bestError)-log(bestError);
-
-        return bestError;
-
-
     }
 
+    // Set the bestClassifier
+    /*
+     bestClassifier->m_Polarity= bestParity;
+    if (-1==bestThresholdIdx)
+        bestClassifier->m_Threshold= features[0]-1.0;
+    else
+        if (numTrainingExamples-1 == bestThresholdIdx)
+            bestClassifier->m_Threshold= features[numTrainingExamples-1]+1.0;
+        else
+            bestClassifier->m_Threshold= (features[featureSortIdx[bestThresholdIdx]]+features[featureSortIdx[bestThresholdIdx+1]])/2;
 
-
-    // Once you find the best weak classifier, you'll need to update the following member variables:
-    //      bestClassifier->m_Polarity
-    //      bestClassifier->m_Threshold
-    //      bestClassifier->m_Weight - this is the alpha value in the course notes
-
+*/
+    bestClassifier->m_Polarity= bestParity;
+    bestClassifier->m_Weight= log((1-bestError-0.0000001)/(bestError+0.0000001));
     return bestError;
 
 }
@@ -1024,22 +1039,30 @@ double MainWindow::FindBestClassifier(int *featureSortIdx, double *features, int
 *******************************************************************************/
 void MainWindow::UpdateDataWeights(double *features, int *trainingLabel, CWeakClassifiers weakClassifier, double *dataWeights, int numTrainingExamples, double bestError)
 {
-    int i= 0, classificationLabel= 0;
-    double beta= bestError/(1-bestError);
-    for (i=0; i<numTrainingExamples; i++)
+    double polarity = weakClassifier.m_Polarity;
+    double threshold = weakClassifier.m_Threshold;
+    double weight = weakClassifier.m_Weight;
+    double sumWeights =0.;
+    for (int i = 0; i < numTrainingExamples; i++)
     {
-        /*
-         * Assigning the polarity, use either 1 or 0
-         * with 1 = face above threshold, and 0 = face below threshold.
-         */
-        classificationLabel= ((1==weakClassifier.m_Polarity&&features[i]>weakClassifier.m_Threshold)||
-                              (0==weakClassifier.m_Polarity&&features[i]<weakClassifier.m_Threshold)) ? 1: 0;
+        double feature = features[i];
+        bool actual = ((polarity == 1 && feature > threshold) || (polarity == 0 && feature < threshold));
+        bool expected = (trainingLabel[i] == 1);
+        if (actual == expected)
+        {
+            dataWeights[i] *= (1 / pow(M_E, weight));
+        }
 
-        dataWeights[i]*=(trainingLabel[i]==classificationLabel)? beta: 1;
+        sumWeights += dataWeights[i];
+    }
+
+    // Normalize the weights!
+    for (int i = 0; i < numTrainingExamples; i++)
+    {
+        dataWeights[i] /= sumWeights;
     }
 
 }
-
 /*******************************************************************************
     ClassifyBox - FindFaces helper function.  Return classification score for bounding box
         integralImage - integral image
